@@ -9,6 +9,7 @@
 #' @param combo_name A string specifying the combo to plot.
 #' @param mv_combo_name A string specifying the multivariate combo to plot.
 #' @param group_by A string to specify grouping: "none", "orig_stat_type", or "category".
+#' @param estimate A string to specify the effect size estimate: "d" or "r_sq"
 #' @param save Logical; whether to save the plot as a PNG file. Default is `FALSE`.
 #' @param out_path A string specifying the output directory for saving plots. Default is "output".
 #' @param file_name A string for the saved file name. Default is "plot".
@@ -18,39 +19,50 @@
 #'
 #' @examples
 #' # Example usage
-#' # plot_sim_ci(data = example_data, name = "Study1", study_details = example_details, 
-#' #            combo_name = "pooling.example.mv.none", mv_combo_name = "pooling.example.mv.multi")
-plot_sim_ci <- function(data, name, study_details, combo_name, mv_combo_name, group_by = 'none', save = FALSE, out_path = 'output', file_name = 'plot') {
+#' # plot_sim_ci(data = data, name = "abcd_fc_r_rest_bmi_z", study_details = study, 
+#' #            combo_name = "pooling.none.motion.none.mv.none", mv_combo_name = "pooling.none.motion.none.mv.multi")
+plot_sim_ci <- function(data, name, study_details, combo_name, mv_combo_name, group_by = 'none', estimate = 'd', save = FALSE, out_path = 'output', file_name = 'plot') {
   if (save) {
     out_name = paste0(out_path, '/', file_name)
     png(out_name)
   }
   
+  if (estimate == "d") {
+    ci_lb <- "sim_ci_lb"
+    ci_ub <- "sim_ci_ub"
+  } else if (estimate == "r_sq") {
+    ci_lb <- "r_sq_sim_ci_lb"
+    ci_ub <- "r_sq_sim_ci_ub"
+  }
+  
+  #TODO: change variable names from d to estimate within this function to
+  # make less confusing. Not urgent.
+  
   # find the full combo name for this multivariate test #TODO: fix the code that creates the data to assign the rest test statistic to the combos
   full_mv_combo_name <- names(data)[grepl(mv_combo_name, names(data))]
 
   # remove na
-  na_idx <- is.na(data[[combo_name]]$d) | is.na(data[[combo_name]]$sim_ci_lb) | is.na(data[[combo_name]]$sim_ci_ub)
-  data[[combo_name]]$d <- data[[combo_name]]$d[!na_idx]
-  data[[combo_name]]$sim_ci_lb <- data[[combo_name]]$sim_ci_lb[!na_idx]
-  data[[combo_name]]$sim_ci_ub <- data[[combo_name]]$sim_ci_ub[!na_idx]
+  na_idx <- is.na(data[[combo_name]][[estimate]]) | is.na(data[[combo_name]][[ci_lb]]) | is.na(data[[combo_name]][[ci_ub]])
+  data[[combo_name]][[estimate]] <- data[[combo_name]][[estimate]][!na_idx]
+  data[[combo_name]][[ci_lb]] <- data[[combo_name]][[ci_lb]][!na_idx]
+  data[[combo_name]][[ci_ub]] <- data[[combo_name]][[ci_ub]][!na_idx]
 
   # unlist sim CIs if list
-  if (is.list(data[[combo_name]]$sim_ci_lb)) {
-    data[[combo_name]]$sim_ci_lb <- unlist(data[[combo_name]]$sim_ci_lb)
-    data[[full_mv_combo_name]]$sim_ci_lb <- unlist(data[[full_mv_combo_name]]$sim_ci_lb)
+  if (is.list(data[[combo_name]][[ci_lb]])) {
+    data[[combo_name]][[ci_lb]] <- unlist(data[[combo_name]][[ci_lb]])
+    data[[full_mv_combo_name]][[ci_lb]] <- unlist(data[[full_mv_combo_name]][[ci_lb]])
   }
-  if (is.list(data[[combo_name]]$sim_ci_ub)) {
-    data[[combo_name]]$sim_ci_ub <- unlist(data[[combo_name]]$sim_ci_ub)
-    data[[full_mv_combo_name]]$sim_ci_ub <- unlist(data[[full_mv_combo_name]]$sim_ci_ub)
+  if (is.list(data[[combo_name]][[ci_ub]])) {
+    data[[combo_name]][[ci_ub]] <- unlist(data[[combo_name]][[ci_ub]])
+    data[[full_mv_combo_name]][[ci_ub]] <- unlist(data[[full_mv_combo_name]][[ci_ub]])
   }
 
   # sort data from smallest to largest d
-  sorted_indices <- order(data[[combo_name]]$d)
-  sorted_d_whole <- data[[combo_name]]$d[sorted_indices]
+  sorted_indices <- order(data[[combo_name]][[estimate]])
+  sorted_d_whole <- data[[combo_name]][[estimate]][sorted_indices]
   # sort confidence intervals by the same order
-  sorted_upper_bounds_whole <- data[[combo_name]]$sim_ci_ub[sorted_indices]
-  sorted_lower_bounds_whole <- data[[combo_name]]$sim_ci_lb[sorted_indices]
+  sorted_upper_bounds_whole <- data[[combo_name]][[ci_ub]][sorted_indices]
+  sorted_lower_bounds_whole <- data[[combo_name]][[ci_lb]][sorted_indices]
   
   # downsample data for plotting
   downsample <- length(sorted_indices) %/% 100
@@ -137,15 +149,15 @@ plot_sim_ci <- function(data, name, study_details, combo_name, mv_combo_name, gr
        ), 
        bty = "n", ncol = 2, cex = 1, x.intersp = 0.0, xpd = TRUE)
   }
-  max_cons_effect = ifelse((abs(max(data[[combo_name]]$sim_ci_lb, na.rm = TRUE)) > abs(min(data[[combo_name]]$sim_ci_ub, na.rm = TRUE))), 
-                                                              ifelse((max(data[[combo_name]]$sim_ci_lb, na.rm = TRUE) > 0),
-                                                                     round(abs(max(data[[combo_name]]$sim_ci_lb, na.rm = TRUE)), 2), 0),
-                                                              ifelse((min(data[[combo_name]]$sim_ci_ub, na.rm = TRUE) < 0), round(abs(min(data[[combo_name]]$sim_ci_ub, na.rm = TRUE)), 2), 0))
+  max_cons_effect = ifelse((abs(max(data[[combo_name]][[ci_lb]], na.rm = TRUE)) > abs(min(data[[combo_name]][[ci_ub]], na.rm = TRUE))), 
+                                                              ifelse((max(data[[combo_name]][[ci_lb]], na.rm = TRUE) > 0),
+                                                                     round(abs(max(data[[combo_name]][[ci_lb]], na.rm = TRUE)), 2), 0),
+                                                              ifelse((min(data[[combo_name]][[ci_ub]], na.rm = TRUE) < 0), round(abs(min(data[[combo_name]][[ci_ub]], na.rm = TRUE)), 2), 0))
 
   if (group_by == 'none') {
     legend("bottomleft", inset = c(0, -0.5), legend = c(bquote(bold("Max conservative effect size: ") ~ .(max_cons_effect)), 
                                                           bquote(bold("Percent not overlapping zero: ") ~.(round(percent_not_zero * 100, 1)) ~ "%"),
-                                                          bquote(bold("Multivariate effect size: ") ~.(round(data[[full_mv_combo_name]]$d, 2)) ~ "  [" ~.(round(data[[full_mv_combo_name]]$sim_ci_lb, 2)) ~ ", " ~.(round(data[[full_mv_combo_name]]$sim_ci_ub, 2)) ~ "]")), col = 1, bty = "n", cex = 1, x.intersp = 0, xpd = TRUE)
+                                                          bquote(bold("Multivariate effect size: ") ~.(round(data[[full_mv_combo_name]][[estimate]], 2)) ~ "  [" ~.(round(data[[full_mv_combo_name]][[ci_lb]], 2)) ~ ", " ~.(round(data[[full_mv_combo_name]][[ci_ub]], 2)) ~ "]")), col = 1, bty = "n", cex = 1, x.intersp = 0, xpd = TRUE)
   } else {
     legend("bottomleft", inset = c(0, -0.5), legend = c(bquote(bold("Max conservative effect size: ") ~ .(max_cons_effect)), 
                                                           bquote(bold("Percent not overlapping zero: ") ~.(round(percent_not_zero * 100, 1)) ~ "%")),

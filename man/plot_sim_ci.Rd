@@ -11,6 +11,7 @@ plot_sim_ci(
   combo_name,
   mv_combo_name,
   group_by = "none",
+  estimate = "d",
   save = FALSE,
   out_path = "output",
   file_name = "plot"
@@ -29,6 +30,8 @@ plot_sim_ci(
 
 \item{group_by}{A string to specify grouping: "none", "orig_stat_type", or "category".}
 
+\item{estimate}{A string to specify the effect size estimate: "d" or "r_sq"}
+
 \item{save}{Logical; whether to save the plot as a PNG file. Default is \code{FALSE}.}
 
 \item{out_path}{A string specifying the output directory for saving plots. Default is "output".}
@@ -44,6 +47,6 @@ for a given dataset. It allows optional grouping, visualization, and file saving
 }
 \examples{
 # Example usage
-# plot_sim_ci(data = example_data, name = "Study1", study_details = example_details, 
-#            combo_name = "pooling.example.mv.none", mv_combo_name = "pooling.example.mv.multi")
+# plot_sim_ci(data = data, name = "abcd_fc_r_rest_bmi_z", study_details = study, 
+#            combo_name = "pooling.none.motion.none.mv.none", mv_combo_name = "pooling.none.motion.none.mv.multi")
 }
