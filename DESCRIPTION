@@ -2,8 +2,8 @@ Package: BrainEffeX_utils
 Title: Utilities for BrainEffeX Shiny
 Version: 0.0.0.9000
 Authors@R: 
-    person("Hallee", "Shearer", , "h.shearer@northeastern.edu", role = c("aut", "cre")),
-    person("Stephanie", "Noble", , "s.noble@northeastern.edu", role = c("aut", "cre"))
+    c(person("Hallee", "Shearer", "h.shearer@northeastern.edu", role = c("aut", "cre")),
+    person("Stephanie", "Noble", "s.noble@northeastern.edu", role = c("aut", "cre")))
 Description: Provides functionality for loading, plotting, and descriptive data for use in the BrainEffeX Shiny web app.
 License: 
 Encoding: UTF-8
