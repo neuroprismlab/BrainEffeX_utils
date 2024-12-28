@@ -1,11 +1,13 @@
-Package: BrainEffeX_utils
+Package: BrainEffeX.utils
 Title: Utilities for BrainEffeX Shiny
 Version: 0.0.0.9000
 Authors@R: 
-    c(person("Hallee", "Shearer", "h.shearer@northeastern.edu", role = c("aut", "cre")),
-    person("Stephanie", "Noble", "s.noble@northeastern.edu", role = c("aut")))
+    c(person("Hallee", "Shearer", email = "h.shearer@northeastern.edu", role = c("cre")),
+    person("Stephanie", "Noble", email = "s.noble@northeastern.edu", role = c("aut")))
 Description: Provides functionality for loading, plotting, and descriptive data for use in the BrainEffeX Shiny web app.
-License: 
+License: GPL-3 
 Encoding: UTF-8
+Imports: 
+    oro.nifti
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
