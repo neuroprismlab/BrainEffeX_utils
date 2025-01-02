@@ -29,9 +29,14 @@ prep_data_for_plot <- function(data, name, study_details, combo_name, mv_combo_n
     ci_ub <- "r_sq_sim_ci_ub"
   }
   
+  group_by_title <- switch(group_by,
+                           "none" = "None",
+                           "orig_stat_type" = "Statistic",
+                           "category" = "Phenotype Category")
+  
   # find the full combo name for this multivariate test #TODO: fix the code that creates the data to assign the rest test statistic to the combos
   if (group_by == "none") {
-    full_mv_combo_name <- names(data)[grepl(mv_combo_name, names(data))]
+    full_mv_combo_name <- names(data)[grepl(mv_combo_name, names(data))] # TODO: SN: why does this happen? in case the whole name isn't provided?
   } else {
     full_mv_combo_name <- mv_combo_name
   }
@@ -62,6 +67,7 @@ prep_data_for_plot <- function(data, name, study_details, combo_name, mv_combo_n
   
   # downsample data for plotting
   downsample <- length(sorted_indices) %/% 100
+  
   if (downsample < 1) {
     downsample = 1
   }
@@ -108,9 +114,9 @@ prep_data_for_plot <- function(data, name, study_details, combo_name, mv_combo_n
   
   sorted_cons_estimate <- ifelse((abs(sorted_lower_bounds) > abs(sorted_upper_bounds)), 
                                  ifelse((sorted_upper_bounds < 0),
-                                        round(sorted_lower_bounds, 2), 0),
+                                        round(sorted_upper_bounds, 2), 0),
                                  ifelse((sorted_lower_bounds > 0), 
-                                        round(sorted_upper_bounds, 2), 0))
+                                        round(sorted_lower_bounds, 2), 0))
   
   max_cons_estimate <- sorted_cons_estimate[which.max(abs(sorted_cons_estimate))] # should be either first or last of sorted entry
   
@@ -121,14 +127,7 @@ prep_data_for_plot <- function(data, name, study_details, combo_name, mv_combo_n
   percent_above_zero <- sum(sorted_lower_bounds > 0) / length(sorted_lower_bounds)
   percent_not_zero = percent_below_zero + percent_above_zero
   
-  
-  # get cons effect of everything, not just downsampled
-  # TODO: already removed na, why is this here?
-  
-  group_by_title <- switch(group_by,
-                           "none" = "None",
-                           "orig_stat_type" = "Statistic",
-                           "category" = "Phenotype Category")
+
   
   # Return ready-to-plot structure
   
@@ -141,16 +140,13 @@ prep_data_for_plot <- function(data, name, study_details, combo_name, mv_combo_n
       below_cross_idx = below_cross_idx,
       above_cross_idx = above_cross_idx
     ),
-    mv_data = list(
-      estimate = data[[full_mv_combo_name]][[estimate]],
-      lb = data[[full_mv_combo_name]][[ci_lb]],
-      ub = data[[full_mv_combo_name]][[ci_ub]]
-    ),
-    summary_info = list(
+    extra_study_details = list(
       percent_not_zero = percent_not_zero,
       max_cons_estimate = max_cons_estimate,
       n_title = paste0("n = ", data[[combo_name]]$n), # TODO: this should not be defined if group_type != "none",
-      group_by_title = group_by_title
+      group_by_title = group_by_title,
+      mv_estimate = data[[full_mv_combo_name]][[estimate]],
+      mv_ci = c(data[[full_mv_combo_name]][[ci_lb]], data[[full_mv_combo_name]][[ci_ub]])
     ),
     study_details = study_details
   )

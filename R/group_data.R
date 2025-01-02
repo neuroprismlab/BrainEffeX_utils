@@ -32,10 +32,13 @@ group_data <- function(v, brain_masks, combo_name, group_by = "category") {
   
   # for each statistic type
   for (level in unique(v$study[[group_var]])) {
+    
     # for each reference type
     for (ref in unique(v$study$ref)) {
+      
       matching_idx <- which(v$study[[group_var]] == level & v$study$ref == ref)
       #print(paste0("length of matching index: ", length(matching_idx)))
+      
       if (length(matching_idx) > 0) {
         matching_names <- v$study$name[matching_idx]
         matching_d_idx <- which(toupper(names(v$data)) %in% toupper(matching_names))
@@ -104,11 +107,25 @@ group_data <- function(v, brain_masks, combo_name, group_by = "category") {
         # store the study info in the study_stat dataframe
         v$study_group <- rbind(v$study_group, data.frame(group = level, ref = ref, name = paste0(group_var, "_", level, "_reference_", ref)))
         
+        
+        # # store grouped data in v_group
+        # v_group <- list()
+        # v_group$data <- list()
+        # v_group$study <- data.frame(group = character(0), ref = character(0), name = character(0))
+        # 
+        # v_group$data[[paste0(group_var, "_", level, "_reference_", ref)]][[combo_name]]$d <- d_avg
+        # v_group$data[[paste0(group_var, "_", level, "_reference_", ref)]][[combo_name]]$sim_ci_lb <- ci_lb_avg
+        # v_group$data[[paste0(group_var, "_", level, "_reference_", ref)]][[combo_name]]$sim_ci_ub <- ci_ub_avg
+        # 
+        # v_group$study <- rbind(v_group$study, data.frame(group = level, ref = ref, name = paste0(group_var, "_", level, "_reference_", ref)))
+        
+        
       }
     }
   }
   
   return(v)
+  # return(v_group)
   
   
 }
