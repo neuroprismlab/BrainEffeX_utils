@@ -65,6 +65,7 @@ load_data <- function(data_dir = "data/") {
     brain_masks = brain_masks,
     data = data,
     template = template,
-    anatomical = anatomical
+    anatomical = anatomical,
+    phen_keys = phen_keys
   ))
 }
