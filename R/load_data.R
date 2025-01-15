@@ -40,6 +40,9 @@ load_data <- function(data_dir = "data/") {
   
   # Load the anatomical NIfTI file for visualization
   anatomical <- readNIfTI(paste0(data_dir, "plotting/MNI152_T1_2mm_Brain.nii.gz"), verbose = FALSE)
+
+  # Load phen_key data dictionary data
+  phen_keys <- read.csv(paste0(data_dir, 'plotting/phen_key.csv')
   
   # Process 'study' data: convert all character columns to lowercase
   study <- data.frame(lapply(study, function(x) {
