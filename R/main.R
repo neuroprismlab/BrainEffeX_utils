@@ -33,8 +33,10 @@ if (pooling == 'net') {
 ## Setup Cont'd
 # if group_by, average data within grouping
 if (group_by != 'none') {
-  v <- group_data(v, v$brain_masks, combo_name)
-  group_by_str <- paste0(' - avg_by_', group_by)
+  # v <- group_data(v, v$brain_masks, combo_name)
+  # group_by_str <- paste0(' - avg_by_', group_by)
+  v <- meta_analysis(v, v$brain_masks, combo_name)
+  group_by_str <- paste0(' - meta_', group_by)
 } else {
   group_by_str <- ''
 }
