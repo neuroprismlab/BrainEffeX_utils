@@ -25,12 +25,14 @@
 #' @import oro.nifti
 #' @export
 load_data <- function(data_dir = "data/") {
+  
+  library(oro.nifti)
+  
   # Identify the data file matching the pattern
   data_file <- list.files(path = data_dir, pattern = "combined_data_", recursive = TRUE)
   
   # Print status for debugging
-  message("Loading data...")
-  print(str(data_file))
+  cat("Loading data...\n", data_file, "\n", sep = "")
   
   # Load the RData file: assumes it contains brain_masks, data (formerly sim_ci), and study
   load(paste0(data_dir, data_file))
