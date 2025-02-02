@@ -1,0 +1,8 @@
+.Rcheck/
+*.Rbuildignore
+!.Rbuildignore
+.Rproj.user/
+.Rhistory
+.RData
+.DS_Store
+old
