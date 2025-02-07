@@ -46,6 +46,9 @@ load_data <- function(data_dir = "data/") {
   # Load the anatomical NIfTI file for visualization
   anatomical <- readNIfTI(anatomical_ref_nii_path, verbose = FALSE)
 
+  # Load phen_key data dictionary data
+  phen_keys <- read.csv(paste0(data_dir, 'plotting/phen_key.csv'))
+
   # Process 'study' data: convert all character columns to lowercase
   study <- data.frame(lapply(study, function(x) {
     if (is.character(x)) {
@@ -67,6 +70,7 @@ load_data <- function(data_dir = "data/") {
     brain_masks = brain_masks,
     data = data,
     template = template,
-    anatomical = anatomical
+    anatomical = anatomical,
+    phen_keys = phen_keys
   ))
 }
