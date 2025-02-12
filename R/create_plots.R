@@ -10,9 +10,6 @@
 #'    - `study_details`: A list of original study details: orig_stat_type, test_component_1, test_component_2, dataset, map_type, group, and ref
 #' @param plot_type String; which plot type to make. Options are 'density' or 'simci'. Default is "simci".
 #' @param add_description Logical; whether to add a description to the plot. Default is `FALSE`.
-#' @param save Logical; whether to save the plot as a PNG file. Default is `FALSE`.
-#' @param out_path A string specifying the output directory for saving plots. Default is "output".
-#' @param file_name A string for the saved file name. Default is "plot".
 #'
 #' @return A plot visualizing effect sizes and simulated CIs.
 #' @export
@@ -20,16 +17,12 @@
 #' @examples
 #' # Example usage
 #' # create_plots(pd)
-create_plots <- function(plot_data_list, plot_type = 'simci', add_description = FALSE, save = FALSE, out_path = 'output', file_name = 'plot') {
+create_plots <- function(plot_data_list, plot_type = 'simci', add_description = FALSE) {
 
   library(ggplot2)
 
   # General plot parameters
   pp <- list()
-  pp$width <- 6
-  pp$height <- 5
-  pp$res <- 300
-  pp$units <- "in"
   if (add_description) {   # if add description: set up with bigger margins
     pp$mar <- c(7, 7, 7, 10)
   } else {
@@ -40,16 +33,6 @@ create_plots <- function(plot_data_list, plot_type = 'simci', add_description = 
   pp$effect_size_thresh <- 0.5
 
   # General setup
-
-  if (save) {
-    out_name = paste0(out_path, '/', file_name)
-    cat("Saving plots to...\n", out_name, "\n", sep = "")
-    if (!dir.exists(out_dir)) {
-      dir.create(out_dir, recursive = TRUE)
-    }
-
-    png(out_name, width = pp$width, height = pp$height, res = pp$res, units = pp$units)
-  }
 
   # if it's a single study, nest it into a list so we can use the below loop
   if (!"data" %in% names(plot_data_list[[1]])) {
@@ -100,11 +83,5 @@ create_plots <- function(plot_data_list, plot_type = 'simci', add_description = 
       p <- add_plot_description(p, plot_data_list[[1]]$study_details, plot_data_list[[1]]$extra_study_details)
 
     }
-  }
-
-  print(p)
-
-  if (save) {
-    dev.off()
   }
 }

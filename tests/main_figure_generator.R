@@ -14,6 +14,7 @@ load_all(utils_script_local) # load from local scripts - for testing
 #library(BrainEffeX.utils) # load from package
 
 library(metafor)
+library(ggpubr)
 
 
 ## User-defined paths & parameters
@@ -24,12 +25,12 @@ pooling <- 'none'     # 'none', 'net'
 motion <- 'none'      # 'none', 'stat_control', "full_residualization", "thresholding"
 
 make_plots <- TRUE
-save_plots <- FALSE
+save_plots <- TRUE
 
 plot_type <- 'density' # c('density', 'simci')
 add_plt_description <- TRUE
 
-plot_combination_style <- 'overlapping' # c('single','overlapping','meta')
+plot_combination_style <- 'single' # c('single','overlapping','meta')
 grouping_var <- 'orig_stat_type'    # 'none', 'category', 'orig_stat_type' # used for both meta-analysis and overlap plots - TODO: separate out?
 effect_size_type <- 'd'
 
@@ -43,12 +44,6 @@ out_dir_basename <- "/Users/stephanienoble/Library/CloudStorage/GoogleDrive-s.no
 
 combo_name <- paste0('pooling.', pooling, '.motion.', motion, '.mv.none')
 mv_combo_name <- paste0('pooling.', pooling, '.motion.', motion, '.mv.multi')
-
-if (pooling == 'net') {
-  net_str=" - net"
-} else {
-  net_str=""
-}
 
 
 ## Load data
@@ -82,16 +77,16 @@ plot_info__group_level <- list() # each row = level within grouping variable
 plot_info__ref <- list() # each row = ref(s) used for a study or grouping variable
 
 if (plot_combination_style == 'single') {  # name by study
-  
+
   for (i in 1:length(v$data)) {
     plot_info__idx[[names(v$data)[[i]]]] <- i
     plot_info__grouping_var[[names(v$data)[[i]]]] <- "none"  # overwrite any other grouping var if doing single plots single
     plot_info__group_level[[names(v$data)[[i]]]] <- NA
     plot_info__ref[[names(v$data)[[i]]]] <- v$study$ref[i]
   }
-    
+
 } else if (plot_combination_style == 'meta') { # name by average of grouping var
-  
+
   for (i in 1:length(v$d_group)) {
     plot_info__idx[[names(v$d_group)[[i]]]] <- i
     plot_info__grouping_var[[names(v$d_group)[[i]]]] <- grouping_var
@@ -100,16 +95,16 @@ if (plot_combination_style == 'single') {  # name by study
   }
 
 } else if (plot_combination_style == 'overlapping') { # overlapping individual plots
-  
+
   if (grouping_var == 'category') {
     study_group_name <- v$study$category
   } else if (grouping_var == 'orig_stat_type') {
     study_group_name <- v$study$orig_stat_type
   }
-  
+
   all_group_names <- unique(study_group_name)
   all_map_types <- unique(v$study$map_type)
-  
+
   for (this_map_type in all_map_types) {
     for (this_group_name in all_group_names) {
       idx <- which(study_group_name == this_group_name & v$study$map_type == this_map_type)
@@ -133,7 +128,9 @@ plot_info <- data.frame(
 
 ## Make Plots
 
-for (i in 1:length(plot_info$idx)) { # this_study_or_group is the name of the group or study
+panel_list <- list()
+
+for (i in 1:length(plot_info$idx)) { # loop over panels - this_study_or_group is the name of the group or study
 
   this_study_or_group <- rownames(plot_info)[i]
   this_plot_info <- plot_info[this_study_or_group,]
@@ -142,13 +139,13 @@ for (i in 1:length(plot_info$idx)) { # this_study_or_group is the name of the gr
   n_studies_in_pd_list <- 1
 
   # 1. Prep
-  
+
   for (j in plot_info$idx[[i]]) {
 
     # change metadata based on whether using meta-analysis
-    
+
     if (plot_combination_style == 'meta') {
-      
+
       name <- names(v$d_group[j])
       data <- v$d_group[[j]]
       study_details <- list()
@@ -158,7 +155,7 @@ for (i in 1:length(plot_info$idx)) { # this_study_or_group is the name of the gr
       name <- names(v$data[j])
       data <- v$data[[j]]
       study_details <- v$study[j, ]
-      
+
     }
 
     if (combo_name %in% names(data)) { # if combo_name exists in data (e.g., not all studies have net)
@@ -166,26 +163,76 @@ for (i in 1:length(plot_info$idx)) { # this_study_or_group is the name of the gr
       # prep
 
       pd <- prep_data_for_plot(data = data, name = name, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_name, estimate = effect_size_type, plot_info = this_plot_info)
-      
+
       pd_list[[n_studies_in_pd_list]] <- pd
       n_studies_in_pd_list <- n_studies_in_pd_list + 1
-      
+
     }
   }
 
   # 2. Plot
-  
+
   if (make_plots) {
     if (length(pd_list) > 0) { # plot only if pd_list isn't empty
-      
-      # filename
-      out_dir <- paste0(out_dir_basename, pd_list$extra_study_details[[this_study_or_group]], ' - ', plot_combination_style, '/', plot_type, net_str)
-      fn <- paste0(this_study_or_group, '_', n_studies_in_pd_list, '.png')
-      
-      # plot
-      create_plots(pd_list, plot_type = plot_type, add_description = add_plt_description, save = save_plots, out_path = out_dir, file_name = fn)
-
+      panel_list[[i]] <- create_plots(pd_list, plot_type = plot_type, add_description = add_plt_description)
     }
   }
 
+}
+
+
+if (make_plots) {
+
+  # General plot parameters
+  # TODO: figure out what we want to set up here vs. to pass or set up in
+  # create_plots, which gets passed to plot_sim_ci, etc.
+  # Should at least set all panel / canvas dimensions here
+  pp <- list()
+  pp$width_per_panel <- 6
+  pp$height_per_panel <- 5
+  pp$res <- 300
+  pp$units <- "in"
+  pp$ncol <- 1
+  pp$nrow <- length(panel_list)
+
+  if (save_plots) {
+
+    # filename
+    # /odir/meta/net/density - motion-none.png
+    # out_dir <- ...
+    # fn <- paste0(this_study_or_group, '_', n_studies_in_pd_list, '.png')
+    # out_name = paste0(out_dir, '/', fn)
+
+    out_dir <- paste0(out_dir_basename, plot_combination_style, '/', pooling, '/')
+    out_name <- paste0(out_dir, plot_type, '- motion-', motion, '.png')
+
+    cat("Saving plots to...\n", out_name, "\n", sep = "")
+
+    if (!dir.exists(out_dir)) {
+      dir.create(out_dir, recursive = TRUE)
+    }
+
+    png(out_name, width = pp$width * pp$ncol, height = pp$height * pp$nrow, res = pp$res, units = pp$units) # TODO: this is tied to
+  }
+
+  # plot multiple panels
+
+  multi_plot <- ggarrange(plotlist = panel_list, ncol=pp$ncol, nrow=pp$row)
+  multi_plot <- annotate_figure(multi_plot,
+                                top = text_grob(paste0(plot_type, ' (motion=', motion,")"), color = "black", face = "bold", size = 11))
+
+  print(multi_plot)
+
+  # TESTING:
+  # dfs_lst <- split(mtcars, ~factor(cyl))
+  # plots_lst <- lapply(1:3, \(plt) {
+  #        ggplot(dfs_lst[[plt]], aes(wt, mpg)) +
+  #              geom_point()
+  # })
+  # ggarrange(plotlist = plots_lst, ncol=1)
+
+
+  if (save_plots) {
+    dev.off()
+  }
 }
