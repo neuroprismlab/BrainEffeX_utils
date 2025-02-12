@@ -56,7 +56,7 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
 
 
   # initialize vars for storing grouping results
-  v$d_group <- list() # store data for each stat + ref type
+  v$data_group <- list() # store data for each stat + ref type
   v$study_group <- data.frame(group = character(0), ref = character(0), name = character(0)) # store grouping info
   v$brain_masks_group <- list()
 
@@ -115,7 +115,7 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
 
         # Combine data
 
-        # TODO: should actually save all results so d_group fields mirror data_group (e.g., v$d_group$d, v$d_group$r_sq, etc)
+        # TODO: should actually save all results so data_group fields mirror data_group (e.g., v$data_group$d, v$data_group$r_sq, etc)
 
         # initialize
         d__group <- NULL
@@ -326,18 +326,18 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
           }
         }
 
-        # store d_avg, sim_ci_lb_avg, and sim_ci_ub_avg in d_group list as a list
+        # store d_avg, sim_ci_lb_avg, and sim_ci_ub_avg in data_group list as a list
 
-        v$d_group[[paste0(grouping_var, "_", level, "_reference_", ref)]][[combo_name]]$d <- d__group
-        v$d_group[[paste0(grouping_var, "_", level, "_reference_", ref)]][[combo_name]]$se <- d_se__group
+        v$data_group[[paste0(grouping_var, "_", level, "_reference_", ref)]][[combo_name]]$d <- d__group
+        v$data_group[[paste0(grouping_var, "_", level, "_reference_", ref)]][[combo_name]]$se <- d_se__group
 
-        v$r_sq_group[[paste0(grouping_var, "_", level, "_reference_", ref)]][[combo_name]]$r_sq <- r_sq__group
-        v$r_sq_group[[paste0(grouping_var, "_", level, "_reference_", ref)]][[combo_name]]$r_sq_se <- r_sq_se__group
+        v$data_group[[paste0(grouping_var, "_", level, "_reference_", ref)]][[combo_name]]$r_sq <- r_sq__group
+        v$data_group[[paste0(grouping_var, "_", level, "_reference_", ref)]][[combo_name]]$r_sq_se <- r_sq_se__group
 
-        v$d_group[[paste0(grouping_var, "_", level, "_reference_", ref)]][[combo_name]]$sim_ci_lb <- d_sim_ci_lb__group
-        v$d_group[[paste0(grouping_var, "_", level, "_reference_", ref)]][[combo_name]]$sim_ci_ub <- d_sim_ci_ub__group
-        v$r_sq_group[[paste0(grouping_var, "_", level, "_reference_", ref)]][[combo_name]]$r_sq_sim_ci_lb <- r_sq_sim_ci_lb__group
-        v$r_sq_group[[paste0(grouping_var, "_", level, "_reference_", ref)]][[combo_name]]$r_sq_sim_ci_ub <- r_sq_sim_ci_ub__group
+        v$data_group[[paste0(grouping_var, "_", level, "_reference_", ref)]][[combo_name]]$sim_ci_lb <- d_sim_ci_lb__group
+        v$data_group[[paste0(grouping_var, "_", level, "_reference_", ref)]][[combo_name]]$sim_ci_ub <- d_sim_ci_ub__group
+        v$data_group[[paste0(grouping_var, "_", level, "_reference_", ref)]][[combo_name]]$r_sq_sim_ci_lb <- r_sq_sim_ci_lb__group
+        v$data_group[[paste0(grouping_var, "_", level, "_reference_", ref)]][[combo_name]]$r_sq_sim_ci_ub <- r_sq_sim_ci_ub__group
 
         # store the study info in the study_stat dataframe
 

@@ -58,7 +58,7 @@ if (!exists("v")) {
 # TODO: move to combine_gl with other more intensive processing / stat estimates & run all relevantmeta beforehand
 
 if (plot_combination_style == 'meta') {
-  if (!("d_group" %in% names(v)) || (previous_meta_grouping_var != grouping_var)) {
+  if (!("data_group" %in% names(v)) || (previous_meta_grouping_var != grouping_var)) {
     v <- meta_analysis(v, v$brain_masks, combo_name, grouping_var = grouping_var)
     previous_meta_grouping_var <- grouping_var
   }
@@ -67,9 +67,9 @@ if (plot_combination_style == 'meta') {
 
 ## Set up unique identifiers for each plot
 
-plot_info__idx <- list() # each row = list of study(s) in data or d_group to include in each plot
+plot_info__idx <- list() # each row = list of study(s) in data or data_group to include in each plot
 # for single plots: each row = 1 entry per study to index into v$data
-# for meta-analysis plots: each row = 1 entry per category to index v$d_group
+# for meta-analysis plots: each row = 1 entry per category to index v$data_group
 # for overlapping plots: each row = list of indices per group (x map type) to index into v$data
 
 plot_info__grouping_var <- list() # each row = grouping variable (same value repeated for each plot)
@@ -87,11 +87,11 @@ if (plot_combination_style == 'single') {  # name by study
 
 } else if (plot_combination_style == 'meta') { # name by average of grouping var
 
-  for (i in 1:length(v$d_group)) {
-    plot_info__idx[[names(v$d_group)[[i]]]] <- i
-    plot_info__grouping_var[[names(v$d_group)[[i]]]] <- grouping_var
-    plot_info__group_level[[names(v$d_group)[[i]]]] <- v$study_group$group_level[i]
-    plot_info__ref[[names(v$d_group)[[i]]]] <- v$study_group$ref[i]
+  for (i in 1:length(v$data_group)) {
+    plot_info__idx[[names(v$data_group)[[i]]]] <- i
+    plot_info__grouping_var[[names(v$data_group)[[i]]]] <- grouping_var
+    plot_info__group_level[[names(v$data_group)[[i]]]] <- v$study_group$group_level[i]
+    plot_info__ref[[names(v$data_group)[[i]]]] <- v$study_group$ref[i]
   }
 
 } else if (plot_combination_style == 'overlapping') { # overlapping individual plots
@@ -146,8 +146,8 @@ for (i in 1:length(plot_info$idx)) { # loop over panels - this_study_or_group is
 
     if (plot_combination_style == 'meta') {
 
-      name <- names(v$d_group[j])
-      data <- v$d_group[[j]]
+      name <- names(v$data_group[j])
+      data <- v$data_group[[j]]
       study_details <- list()
 
     } else {
