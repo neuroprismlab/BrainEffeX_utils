@@ -16,7 +16,7 @@
 #' # meta_analysis(v,v$brain_masks, "pooling.none.motion.none.mv.none")
 meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category") {
 
-  testing <- 1
+  testing <- FALSE
 
   # libraries & functions
 
@@ -56,9 +56,12 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
 
 
   # initialize vars for storing grouping results
-  v$data_group <- list() # store data for each stat + ref type
-  v$study_group <- data.frame(group = character(0), ref = character(0), name = character(0)) # store grouping info
-  v$brain_masks_group <- list()
+  # if data_group doesn't exist, create
+  if (!("data_group" %in% names(v))) {
+    v$data_group <- list() # store data for each stat + ref type
+    v$study_group <- data.frame(group = character(0), ref = character(0), name = character(0)) # store grouping info
+    v$brain_masks_group <- list()
+  }
 
   # combo_name <- names(data)[grepl(combo_name, names(v$data[[1]]))] # because some are "multi" and some "multi.r" - TODO: this isn't great - somehow it changes mv.none to mv.multi
 
@@ -277,17 +280,37 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
 
             } else { # meta-analysis
 
-              d_meta_analysis <- NULL
-              d_meta_analysis <- rma.uni(yi = d__all[this_variable,], se = d_se__all[this_variable,], method = "REML")
-              d__group[this_variable] <- d_meta_analysis$b
-              d_sim_ci_lb__group[this_variable] <- d_meta_analysis$ci.lb # TODO: here and below - re-specify alpha/n_vars for corrected CI
-              d_sim_ci_ub__group[this_variable] <- d_meta_analysis$ci.ub
+              # do meta for d only if not empty or NA; otherwise set NA
+              if (length(d__all[this_variable,]) == 0 || length(d_se__all[this_variable,]) == 0 || all(is.na(d__all[this_variable,])) || all(is.na(d_se__all[this_variable,]))) {
+                d__group[this_variable] <- NA
+                d_sim_ci_lb__group[this_variable] <- NA
+                d_sim_ci_ub__group[this_variable] <- NA
 
-              r_sq_meta_analysis <- NULL
-              r_sq_meta_analysis <- rma.uni(yi = r_sq__all[this_variable,], se = r_sq_se__all[this_variable,], method = "REML")
-              r_sq__group[this_variable] <- r_sq_meta_analysis$b
-              r_sq_sim_ci_lb__group[this_variable] <- r_sq_meta_analysis$ci.lb
-              r_sq_sim_ci_ub__group[this_variable] <- r_sq_meta_analysis$ci.ub
+              } else {
+
+                d_meta_analysis <- NULL
+                d_meta_analysis <- rma.uni(yi = d__all[this_variable,], se = d_se__all[this_variable,], method = c("REML","DL")) # added alternative closed form method in case REML doesn't converge
+                # d_meta_analysis <- rma.uni(yi = d__all[this_variable,], se = d_se__all[this_variable,], method = "REML", control=list(stepadj=0.5, maxiter=1000)) # added control to help with convergence
+                d__group[this_variable] <- d_meta_analysis$b
+                d_sim_ci_lb__group[this_variable] <- d_meta_analysis$ci.lb # TODO: here and below - re-specify alpha/n_vars for corrected CI
+                d_sim_ci_ub__group[this_variable] <- d_meta_analysis$ci.ub
+              }
+
+              # do meta for d only if not empty or NA; otherwise set NA
+              if (length(r_sq__all[this_variable,]) == 0 || length(r_sq_se__all[this_variable,]) == 0 || all(is.na(r_sq__all[this_variable,])) || all(is.na(r_sq_se__all[this_variable,]))) {
+                r_sq__group[this_variable] <- NA
+                r_sq_sim_ci_lb__group[this_variable] <- NA
+                r_sq_sim_ci_ub__group[this_variable] <- NA
+
+              } else {
+
+                r_sq_meta_analysis <- NULL
+                r_sq_meta_analysis <- rma.uni(yi = r_sq__all[this_variable,], se = r_sq_se__all[this_variable,], method = c("REML","DL")) # added alternative closed form method in case REML doesn't converge
+                # r_sq_meta_analysis <- rma.uni(yi = r_sq__all[this_variable,], se = r_sq_se__all[this_variable,], method = "REML", control=list(stepadj=0.5, maxiter=1000))
+                r_sq__group[this_variable] <- r_sq_meta_analysis$b
+                r_sq_sim_ci_lb__group[this_variable] <- r_sq_meta_analysis$ci.lb
+                r_sq_sim_ci_ub__group[this_variable] <- r_sq_meta_analysis$ci.ub
+              }
 
             }
 
