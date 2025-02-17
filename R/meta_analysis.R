@@ -252,7 +252,9 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
 
           # preallocate to store results
 
-          d__group <- numeric(dim(d__all)[1])
+          n_vars <- dim(d__all)[1]
+
+          d__group <- numeric(n_vars)
           d_sim_ci_lb__group <- d__group
           d_sim_ci_ub__group <- d__group
           # d_se__group <- d__group
@@ -262,8 +264,11 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
           r_sq_sim_ci_ub__group <- d__group
           # r_sq_se__group <- d__group
 
+          level <- 1 - (0.05 / n_vars) # confidence level for simultaneous CIs
+
           start_time <- Sys.time()
-          for (this_variable in 1:dim(d__all)[1]) {
+
+          for (this_variable in 1:n_vars) {
 
             if (testing) { # simple mean
 
@@ -277,24 +282,30 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
 
             } else { # meta-analysis
 
-              # do meta for d only if not empty or NA; otherwise set NA
+              # For d: do meta only if not empty or NA; otherwise set NA
+
               if (length(d__all[this_variable,]) == 0 || length(d_se__all[this_variable,]) == 0 || all(is.na(d__all[this_variable,])) || all(is.na(d_se__all[this_variable,]))) {
                 d__group[this_variable] <- NA
                 d_sim_ci_lb__group[this_variable] <- NA
                 d_sim_ci_ub__group[this_variable] <- NA
 
-              } else {
+              } else { # do meta
 
                 d_meta_analysis <- NULL
                 d_meta_analysis <- rma.uni(yi = d__all[this_variable,], se = d_se__all[this_variable,], method = c("REML","DL")) # added alternative closed form method in case REML doesn't converge
                 # d_meta_analysis <- rma.uni(yi = d__all[this_variable,], se = d_se__all[this_variable,], method = "REML", control=list(stepadj=0.5, maxiter=1000)) # added control to help with convergence
 
                 d__group[this_variable] <- d_meta_analysis$b
-                d_sim_ci_lb__group[this_variable] <- d_meta_analysis$ci.lb # TODO: here and below - re-specify alpha/n_vars for corrected CI
-                d_sim_ci_ub__group[this_variable] <- d_meta_analysis$ci.ub
+
+                this_ci <- confint(d_meta_analysis, level = level)
+                d_sim_ci_lb__group[this_variable] <- this_ci$ci.lb
+                d_sim_ci_ub__group[this_variable] <- this_ci$ci.ub
+                # d_sim_ci_lb__group[this_variable] <- d_meta_analysis$ci.lb # TODO: here and below - re-specify alpha/n_vars for corrected CI
+                # d_sim_ci_ub__group[this_variable] <- d_meta_analysis$ci.ub
               }
 
-              # do meta for d only if not empty or NA; otherwise set NA
+              # For r_sq: do meta only if not empty or NA; otherwise set NA
+
               if (length(r_sq__all[this_variable,]) == 0 || length(r_sq_se__all[this_variable,]) == 0 || all(is.na(r_sq__all[this_variable,])) || all(is.na(r_sq_se__all[this_variable,]))) {
                 r_sq__group[this_variable] <- NA
                 r_sq_sim_ci_lb__group[this_variable] <- NA
@@ -307,8 +318,12 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
                 # r_sq_meta_analysis <- rma.uni(yi = r_sq__all[this_variable,], se = r_sq_se__all[this_variable,], method = "REML", control=list(stepadj=0.5, maxiter=1000))
 
                 r_sq__group[this_variable] <- r_sq_meta_analysis$b
-                r_sq_sim_ci_lb__group[this_variable] <- r_sq_meta_analysis$ci.lb
-                r_sq_sim_ci_ub__group[this_variable] <- r_sq_meta_analysis$ci.ub
+
+                this_ci <- confint(r_sq_meta_analysis, level = level)
+                r_sq_sim_ci_lb__group[this_variable] <- this_ci$ci.lb
+                r_sq_sim_ci_ub__group[this_variable] <- this_ci$ci.ub
+                # r_sq_sim_ci_lb__group[this_variable] <- r_sq_meta_analysis$ci.lb
+                # r_sq_sim_ci_ub__group[this_variable] <- r_sq_meta_analysis$ci.ub
               }
 
             }
@@ -329,20 +344,18 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
         # TODO: not sure we want this, after all the masking - if so, keep a new mask
 
         if (length(zero_idx) > 0) {
-          d__group <- d__group[-zero_idx]
-          # d_se__group <- d_se__group[-zero_idx]
-
           if (testing) {
+            d__group <- d__group[-zero_idx]
+            # d_se__group <- d_se__group[-zero_idx]
             d_sim_ci_lb__group <- d_sim_ci_lb__group[-zero_idx]
             d_sim_ci_ub__group <- d_sim_ci_ub__group[-zero_idx]
           }
 
         }
         if (length(r_sq_zero_idx) > 0) {
-          r_sq__group <- r_sq__group[-zero_idx]
-          # r_sq_se__group <- r_sq_se__group[-zero_idx]
-
           if (testing) {
+            r_sq__group <- r_sq__group[-zero_idx]
+            # r_sq_se__group <- r_sq_se__group[-zero_idx]
             r_sq_sim_ci_lb__group <- r_sq_sim_ci_lb__group[-zero_idx]
             r_sq_sim_ci_ub__group <- r_sq_sim_ci_ub__group[-zero_idx]
           }
