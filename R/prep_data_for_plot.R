@@ -3,7 +3,6 @@
 #' This function prepares a given study for effect size plots.
 #'
 #' @param data A list containing effect size data (e.g., `v$d_clean[[i]]`).
-#' @param name A string specifying the study name (e.g., `names(v$d_clean[i])`).
 #' @param study_details A list of study details (e.g., `v$study[i, ]`).
 #' @param combo_name A string specifying the combo to plot.
 #' @param mv_combo_name A string specifying the multivariate combo to plot.
@@ -14,12 +13,13 @@
 #' @export
 #'
 #' @examples
-#' # Example usage
-#' # plot_sim_ci(data = data, name = "abcd_fc_r_rest_bmi_z", study_details = study,
-#' #            combo_name = "pooling.none.motion.none.mv.none", mv_combo_name = "pooling.none.motion.none.mv.multi")
-#' pd <- prep_data_for_plot(data = v$data[[i]], name = names(v$data[i]), study_details = v$study[i, ], plot_info$grouping_var='none',
+#' Example usage
+#' pd <- prep_data_for_plot(data = v$data[[i]], study_details = v$study[i, ], plot_info$grouping_var='none',
 #'              combo_name = "pooling.none.motion.none.mv.none", mv_combo_name = "pooling.none.motion.none.mv.multi")
-prep_data_for_plot <- function(data, name, study_details, combo_name, mv_combo_name, estimate = 'd', plot_info = 'NA') {
+prep_data_for_plot <- function(data, study_details, combo_name, mv_combo_name, estimate = 'd', plot_info = 'NA') {
+
+
+  # 1. Clean, prep, and downsample data (clean = remove NA's, prep = sort)
 
   if (estimate == "d") {
     ci_lb <- "sim_ci_lb"
@@ -29,12 +29,6 @@ prep_data_for_plot <- function(data, name, study_details, combo_name, mv_combo_n
     ci_ub <- "r_sq_sim_ci_ub"
   }
 
-  # find the full combo name for this multivariate test #TODO: fix the code that creates the data to assign the rest test statistic to the combos
-  # if (plot_info$grouping_var == "none") {
-    full_mv_combo_name <- names(data)[grepl(mv_combo_name, names(data))]
-  # } else {
-  #   full_mv_combo_name <- mv_combo_name  # TODO: SN: we can prob always just use the above for now
-  # }
 
   # remove na
   na_idx <- is.na(data[[combo_name]][[estimate]]) | is.na(data[[combo_name]][[ci_lb]]) | is.na(data[[combo_name]][[ci_ub]])
@@ -42,30 +36,11 @@ prep_data_for_plot <- function(data, name, study_details, combo_name, mv_combo_n
   data[[combo_name]][[ci_lb]] <- data[[combo_name]][[ci_lb]][!na_idx]
   data[[combo_name]][[ci_ub]] <- data[[combo_name]][[ci_ub]][!na_idx]
 
-  # get MV estimates - TODO: we're not currently getting mv alongside regular
-  if (length(full_mv_combo_name) != 0) {
-    data[[full_mv_combo_name]][[estimate]] <- data[[full_mv_combo_name]][[estimate]]
-    data[[full_mv_combo_name]][[ci_lb]] <- data[[full_mv_combo_name]][[ci_lb]]
-    data[[full_mv_combo_name]][[ci_ub]] <- data[[full_mv_combo_name]][[ci_ub]]
-  } else { # create a little placeholder so things will still run
-    full_mv_combo_name <- mv_combo_name
-    data[[full_mv_combo_name]] <- list()
-    data[[full_mv_combo_name]][[estimate]] <- NULL
-    data[[full_mv_combo_name]][[ci_lb]] <- NULL
-    data[[full_mv_combo_name]][[ci_ub]] <- NULL
-  }
-
-
   # unlist sim CIs if list
   if (is.list(data[[combo_name]][[ci_lb]])) {
     data[[combo_name]][[ci_lb]] <- unlist(data[[combo_name]][[ci_lb]])
     data[[combo_name]][[ci_ub]] <- unlist(data[[combo_name]][[ci_ub]])
-    if (full_mv_combo_name %in% names(data)) {
-      data[[full_mv_combo_name]][[ci_lb]] <- unlist(data[[full_mv_combo_name]][[ci_lb]])
-      data[[full_mv_combo_name]][[ci_ub]] <- unlist(data[[full_mv_combo_name]][[ci_ub]])
-    }
   }
-
 
 
   # sort data from smallest to largest effect size
@@ -82,6 +57,7 @@ prep_data_for_plot <- function(data, name, study_details, combo_name, mv_combo_n
   if (downsample < 1) {
     downsample = 1
   }
+
   sorted_estimate <- sorted_estimate_whole[seq(1, length(sorted_estimate_whole), by = downsample)]
   # to include the last element of the sorted data, check if the last element of sorted_estimate is the same as the last element of sorted_estimate_whole
   if (sorted_estimate[length(sorted_estimate)] != sorted_estimate_whole[length(sorted_estimate_whole)]) {
@@ -98,24 +74,11 @@ prep_data_for_plot <- function(data, name, study_details, combo_name, mv_combo_n
     sorted_lower_bounds <- c(sorted_lower_bounds, sorted_lower_bounds_whole[length(sorted_lower_bounds_whole)])
   }
 
-  # for coloring of confidence intervals:
-  below_zero <- sorted_upper_bounds < 0
-  below_cross_idx <- which(diff(below_zero) == -1) + 1# the last TRUE before switch
 
-  above_zero <- sorted_lower_bounds > 0
-  above_cross_idx <- (which(diff(above_zero) == 1)) + 1 # the last FALSE before switch to true
 
-  # if there are no values below zero, set the index to 1
-  if (length(below_cross_idx) == 0) {
-    below_cross_idx = 1
-  }
+  # 2. Calculate conservative effect sizes
 
-  # if there are no values above zero, set the index to the end
-  if (length(above_cross_idx) == 0) {
-    above_cross_idx = length(above_zero)
-  }
 
-  # calculate conservative effect sizes
   # conservative effect size = elementwise min of abs of upper and lower bound, but keep sign
   # sorted_cons_estimate_whole <- ifelse((abs(data[[combo_name]][[ci_lb]]) > abs(data[[combo_name]][[ci_ub]])),
   #                                      ifelse((data[[combo_name]][[ci_lb]] > 0),
@@ -133,14 +96,66 @@ prep_data_for_plot <- function(data, name, study_details, combo_name, mv_combo_n
 
 
 
+  # 3. Get additional summary and plot information
+
+  # for coloring of confidence intervals:
+
+  below_zero <- sorted_upper_bounds < 0
+  below_cross_idx <- which(diff(below_zero) == -1) + 1# the last TRUE before switch
+
+  above_zero <- sorted_lower_bounds > 0
+  above_cross_idx <- (which(diff(above_zero) == 1)) + 1 # the last FALSE before switch to true
+
+  # if there are no values below zero, set the index to 1
+  if (length(below_cross_idx) == 0) {
+    below_cross_idx = 1
+  }
+
+  # if there are no values above zero, set the index to the end
+  if (length(above_cross_idx) == 0) {
+    above_cross_idx = length(above_zero)
+  }
+
+
   # calculate the percent of edges/voxels with confidence intervals that don't overlap with zero:
+
   percent_below_zero <- sum(sorted_upper_bounds < 0) / length(sorted_upper_bounds)
   percent_above_zero <- sum(sorted_lower_bounds > 0) / length(sorted_lower_bounds)
   percent_not_zero = percent_below_zero + percent_above_zero
 
 
+  # get extra multivariate info
 
-  # Return ready-to-plot structure
+  # find the full combo name for this multivariate test #TODO: fix the code that creates the data to assign the rest test statistic to the combos
+  # if (plot_info$grouping_var == "none") {
+  full_mv_combo_name <- names(data)[grepl(mv_combo_name, names(data))]
+  # } else {
+  #   full_mv_combo_name <- mv_combo_name  # TODO: SN: we can prob always just use the above for now
+  # }
+
+  # get MV estimates - TODO: we're not currently getting mv alongside regular
+  if (length(full_mv_combo_name) != 0) {
+    data[[full_mv_combo_name]][[estimate]] <- data[[full_mv_combo_name]][[estimate]]
+    data[[full_mv_combo_name]][[ci_lb]] <- data[[full_mv_combo_name]][[ci_lb]]
+    data[[full_mv_combo_name]][[ci_ub]] <- data[[full_mv_combo_name]][[ci_ub]]
+  } else { # create a little placeholder so things will still run
+    full_mv_combo_name <- mv_combo_name
+    data[[full_mv_combo_name]] <- list()
+    data[[full_mv_combo_name]][[estimate]] <- NULL
+    data[[full_mv_combo_name]][[ci_lb]] <- NULL
+    data[[full_mv_combo_name]][[ci_ub]] <- NULL
+  }
+
+  if ((full_mv_combo_name %in% names(data))) {
+    if (is.list(data[[full_mv_combo_name]][[ci_lb]]) ) {
+      data[[full_mv_combo_name]][[ci_lb]] <- unlist(data[[full_mv_combo_name]][[ci_lb]])
+      data[[full_mv_combo_name]][[ci_ub]] <- unlist(data[[full_mv_combo_name]][[ci_ub]])
+    }
+  }
+
+
+
+  # 4. Return ready-to-plot structure
 
 
   plot_data <- list(

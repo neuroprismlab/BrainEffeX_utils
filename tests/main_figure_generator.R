@@ -27,10 +27,10 @@ motion <- 'none'      # 'none', 'stat_control', "full_residualization", "thresho
 make_plots <- TRUE
 save_plots <- TRUE
 
-plot_type <- 'density' # c('density', 'simci')
+plot_type <- 'simci' # c('density', 'simci', 'spatial')
 add_plt_description <- TRUE
 
-plot_combination_style <- 'single' # c('single','overlapping','meta')
+plot_combination_style <- 'meta' # c('single','overlapping','meta')
 grouping_var <- 'orig_stat_type'    # 'none', 'category', 'orig_stat_type' # used for both meta-analysis and overlap plots - TODO: separate out?
 effect_size_type <- 'd'
 
@@ -45,6 +45,12 @@ out_dir_basename <- "/Users/stephanienoble/Library/CloudStorage/GoogleDrive-s.no
 combo_name <- paste0('pooling.', pooling, '.motion.', motion, '.mv.none')
 mv_combo_name <- paste0('pooling.', pooling, '.motion.', motion, '.mv.multi')
 
+# Correct args
+
+if (plot_combination_style == 'single' & grouping_var != 'none') {
+  grouping_var <- 'none'
+  cat("Warning: grouping_var set to 'none' for single plots\n")
+}
 
 ## Load data
 
@@ -58,18 +64,19 @@ if (!exists("v")) {
 # TODO: move to combine_gl with other more intensive processing / stat estimates & run all relevantmeta beforehand
 
 if (plot_combination_style == 'meta') {
-  if (!("data_group" %in% names(v)) || (previous_meta_grouping_var != grouping_var)) {
+  meta_str <- paste0('meta_',grouping_var)
+  if (!(meta_str %in% names(v))) { # check if this meta has already been run
     v <- meta_analysis(v, v$brain_masks, combo_name, grouping_var = grouping_var)
-    previous_meta_grouping_var <- grouping_var
+    # TODO: will also have to catch the case where d is defined but r_sq is not
   }
 }
 
 
 ## Set up unique identifiers for each plot
 
-plot_info__idx <- list() # each row = list of study(s) in data or data_group to include in each plot
+plot_info__idx <- list() # each row = list of study(s) in data to include in each plot
 # for single plots: each row = 1 entry per study to index into v$data
-# for meta-analysis plots: each row = 1 entry per category to index v$data_group
+# for meta-analysis plots: each row = 1 entry per category to index v[[meta_str]]$data
 # for overlapping plots: each row = list of indices per group (x map type) to index into v$data
 
 plot_info__grouping_var <- list() # each row = grouping variable (same value repeated for each plot)
@@ -87,11 +94,11 @@ if (plot_combination_style == 'single') {  # name by study
 
 } else if (plot_combination_style == 'meta') { # name by average of grouping var
 
-  for (i in 1:length(v$data_group)) {
-    plot_info__idx[[names(v$data_group)[[i]]]] <- i
-    plot_info__grouping_var[[names(v$data_group)[[i]]]] <- grouping_var
-    plot_info__group_level[[names(v$data_group)[[i]]]] <- v$study_group$group_level[i]
-    plot_info__ref[[names(v$data_group)[[i]]]] <- v$study_group$ref[i]
+  for (i in 1:length(v[[meta_str]]$data)) {
+    plot_info__idx[[names(v[[meta_str]]$data)[[i]]]] <- i
+    plot_info__grouping_var[[names(v[[meta_str]]$data)[[i]]]] <- grouping_var
+    plot_info__group_level[[names(v[[meta_str]]$data)[[i]]]] <- v[[meta_str]]$study$group_level[i]
+    plot_info__ref[[names(v[[meta_str]]$data)[[i]]]] <- v[[meta_str]]$study$ref[i]
   }
 
 } else if (plot_combination_style == 'overlapping') { # overlapping individual plots
@@ -146,15 +153,17 @@ for (i in 1:length(plot_info$idx)) { # loop over panels - this_study_or_group is
 
     if (plot_combination_style == 'meta') {
 
-      name <- names(v$data_group[j])
-      data <- v$data_group[[j]]
+      # name <- names(v$data_group[j])
+      data <- v[[meta_str]]$data[[j]]
       study_details <- list()
+      brain_masks <- v[[meta_str]]$brain_masks[[j]]
 
     } else {
 
-      name <- names(v$data[j])
+      # name <- names(v$data[j])
       data <- v$data[[j]]
       study_details <- v$study[j, ]
+      brain_masks <- v$brain_masks[[j]]
 
     }
 
@@ -162,7 +171,12 @@ for (i in 1:length(plot_info$idx)) { # loop over panels - this_study_or_group is
 
       # prep
 
-      pd <- prep_data_for_plot(data = data, name = name, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_name, estimate = effect_size_type, plot_info = this_plot_info)
+      if (plot_type == 'spatial') {
+        # TODO: we probably don't even need a dedicated function for the spatial plots, just pass the relevant info
+        pd <- prep_data_for_spatial_plot(data = data, brain_masks = brain_masks, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_name, estimate = effect_size_type, plot_info = this_plot_info)
+      } else {
+        pd <- prep_data_for_plot(data = data, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_name, estimate = effect_size_type, plot_info = this_plot_info)
+      }
 
       pd_list[[n_studies_in_pd_list]] <- pd
       n_studies_in_pd_list <- n_studies_in_pd_list + 1
@@ -195,7 +209,7 @@ if (make_plots) {
   pp$ncol <- 1
   pp$nrow <- length(panel_list)
 
-  if (save_plots) {
+  if (save_plots) { # TODO: let's use ggsave(fn) instead of this png(fn) and below dev.off()
 
     # filename
     # /odir/meta/net/density - motion-none.png
@@ -203,8 +217,14 @@ if (make_plots) {
     # fn <- paste0(this_study_or_group, '_', n_studies_in_pd_list, '.png')
     # out_name = paste0(out_dir, '/', fn)
 
-    out_dir <- paste0(out_dir_basename, plot_combination_style, '/', pooling, '/')
-    out_name <- paste0(out_dir, plot_type, '- motion-', motion, '.png')
+    if (grouping_var != 'none') {
+      grouping_var_str <- paste0(grouping_var, '-')
+    } else {
+      grouping_var_str <- ''
+    }
+
+    out_dir <- paste0(out_dir_basename, 'pooling-', pooling, '/', plot_combination_style, '/')
+    out_name <- paste0(out_dir, grouping_var_str, plot_type, ' - motion-', motion, '.png')
 
     cat("Saving plots to...\n", out_name, "\n", sep = "")
 

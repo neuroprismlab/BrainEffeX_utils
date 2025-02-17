@@ -23,11 +23,11 @@ create_plots <- function(plot_data_list, plot_type = 'simci', add_description = 
 
   # General plot parameters
   pp <- list()
-  if (add_description) {   # if add description: set up with bigger margins
-    pp$mar <- c(7, 7, 7, 10)
-  } else {
-    pp$mar <- c(3, 4, 5, 2)
-  }
+  # if (add_description) {   # if add description: set up with bigger margins
+  #   pp$mar <- c(7, 7, 7, 10)
+  # } else {
+  #   pp$mar <- c(3, 4, 5, 2)
+  # }
   pp$effect_size_limits_big <- c(-1.2, 1.2)
   pp$effect_size_limits_small <- c(-0.5, 0.5)
   pp$effect_size_thresh <- 0.5
@@ -41,18 +41,32 @@ create_plots <- function(plot_data_list, plot_type = 'simci', add_description = 
 
   # Make plot(s)
 
-  par(mar=pp$mar)
+  # par(mar=pp$mar)
   if (plot_type == 'simci') {
+
     p <- plot_simci_panel(pp, plot_data_list)
+    # p <- plot_simci_panel(plot_data_list)
+
   } else if (plot_type == 'density') {
+
     p <- plot_density_panel(pp, plot_data_list)
+    # p <- plot_density_panel(plot_data_list)
+
+  } else if (plot_type == 'spatial') {
+
+    if (plot_data_list[[1]]$extra_study_details$ref[[1]] == 'voxel') { # TODO: could be
+      p <- plot_activation_panel(pp, plot_data_list)
+    } else {
+      p <- plot_connectivity_panel(pp, plot_data_list)
+    }
+
   } else {
-    error('Please specify simci or density')
+    error('Please specify simci, density, or spatial')
   }
 
   # Add extra info, if specified
 
-  if (add_description) {
+  if (add_description && (plot_type == 'simci' || plot_type == 'density') ) { # summary info only obtained during prep of simci/density
 
     if ((length(plot_data_list) > 1) ) { # add details for overlapping plots
 
@@ -84,4 +98,6 @@ create_plots <- function(plot_data_list, plot_type = 'simci', add_description = 
 
     }
   }
+
+  return(p)
 }

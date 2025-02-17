@@ -57,10 +57,12 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
 
   # initialize vars for storing grouping results
   # if data_group doesn't exist, create
-  if (!("data_group" %in% names(v))) {
-    v$data_group <- list() # store data for each stat + ref type
-    v$study_group <- data.frame(group = character(0), ref = character(0), name = character(0)) # store grouping info
-    v$brain_masks_group <- list()
+  meta_str <- paste0('meta_',grouping_var)
+  if (!(meta_str %in% names(v))) {
+    v[[meta_str]] <- list()
+    v[[meta_str]]$data <- list() # store data for each stat + ref type
+    v[[meta_str]]$study <- data.frame(group = character(0), ref = character(0), name = character(0)) # store grouping info
+    v[[meta_str]]$brain_masks <- list()
   }
 
   # combo_name <- names(data)[grepl(combo_name, names(v$data[[1]]))] # because some are "multi" and some "multi.r" - TODO: this isn't great - somehow it changes mv.none to mv.multi
@@ -86,23 +88,18 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
 
           if (v$study$map_type[matching_idx__study[1]] == "fc") {
 
-            # make FC triangles all upper so they can be combined
-
-            # TODO: edit the below to actually fix non-upper conditions, namely: structure data and apply operation for every variable in v$data (d, r_sq, ci's, stats, etc)
-            # TODO: do we already have a checker like this elsewhere or in the combine functions?
-
+            # TEMP mask flipper - TODO: we make sure everything is upper tri in calc_gl . Fix the masks accordingly there, then remove this next part
             triangle_type <- which_triangle(brain_masks[[v$study$name[this_study]]]$mask)
             switch(triangle_type,
                    # "upper" = leave as is
                    "lower" = { # transpose
-                     warning("Data should be upper triangular but is lower triangular.")
-                     # v$data[[this_study]][[combo_name]]$d <- t(v$data[[this_study]][[combo_name]]$d)
-                     # brain_masks[[v$study$name[this_study]]]$mask <- t(brain_masks[[v$study$name[this_study]]]$mask)
+                     warning("Data is upper triangular but mask is lower triangular.")
+                     brain_masks[[v$study$name[this_study]]]$mask <- t(brain_masks[[v$study$name[this_study]]]$mask)
                    },
                    "both" = { # remove lower
                      warning("Data should be upper triangular but contains entries on both sides of diagonal.")
                      # v$data[[this_study]][[combo_name]]$d[lower.tri(v$data[[this_study]][[combo_name]]$d)] <- 0
-                     # brain_masks[[v$study$name[this_study]]]$mask[lower.tri(brain_masks[[v$study$name[this_study]]]$mask)] <- 0
+                     brain_masks[[v$study$name[this_study]]]$mask[lower.tri(brain_masks[[v$study$name[this_study]]]$mask)] <- 0
                    },
                    "no_data" = { # remove this data
                      warning("Mask suggests no data exists.")
@@ -175,7 +172,7 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
             n_vars_intersection <- sum(intersection_mask)
           }
 
-          d__all <- matrix(0, nrow = n_vars_intersection, ncol = length(matching_idx__data))
+          d__all <- matrix(NA, nrow = n_vars_intersection, ncol = length(matching_idx__data))
           d_sim_ci_ub__all <- d__all
           d_sim_ci_lb__all <- d__all
           d_se__all <- d__all
@@ -258,12 +255,12 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
           d__group <- numeric(dim(d__all)[1])
           d_sim_ci_lb__group <- d__group
           d_sim_ci_ub__group <- d__group
-          d_se__group <- d__group
+          # d_se__group <- d__group
 
           r_sq__group <- d__group
           r_sq_sim_ci_lb__group <- d__group
           r_sq_sim_ci_ub__group <- d__group
-          r_sq_se__group <- d__group
+          # r_sq_se__group <- d__group
 
           start_time <- Sys.time()
           for (this_variable in 1:dim(d__all)[1]) {
@@ -291,6 +288,7 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
                 d_meta_analysis <- NULL
                 d_meta_analysis <- rma.uni(yi = d__all[this_variable,], se = d_se__all[this_variable,], method = c("REML","DL")) # added alternative closed form method in case REML doesn't converge
                 # d_meta_analysis <- rma.uni(yi = d__all[this_variable,], se = d_se__all[this_variable,], method = "REML", control=list(stepadj=0.5, maxiter=1000)) # added control to help with convergence
+
                 d__group[this_variable] <- d_meta_analysis$b
                 d_sim_ci_lb__group[this_variable] <- d_meta_analysis$ci.lb # TODO: here and below - re-specify alpha/n_vars for corrected CI
                 d_sim_ci_ub__group[this_variable] <- d_meta_analysis$ci.ub
@@ -307,6 +305,7 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
                 r_sq_meta_analysis <- NULL
                 r_sq_meta_analysis <- rma.uni(yi = r_sq__all[this_variable,], se = r_sq_se__all[this_variable,], method = c("REML","DL")) # added alternative closed form method in case REML doesn't converge
                 # r_sq_meta_analysis <- rma.uni(yi = r_sq__all[this_variable,], se = r_sq_se__all[this_variable,], method = "REML", control=list(stepadj=0.5, maxiter=1000))
+
                 r_sq__group[this_variable] <- r_sq_meta_analysis$b
                 r_sq_sim_ci_lb__group[this_variable] <- r_sq_meta_analysis$ci.lb
                 r_sq_sim_ci_ub__group[this_variable] <- r_sq_meta_analysis$ci.ub
@@ -331,7 +330,7 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
 
         if (length(zero_idx) > 0) {
           d__group <- d__group[-zero_idx]
-          d_se__group <- d_se__group[-zero_idx]
+          # d_se__group <- d_se__group[-zero_idx]
 
           if (testing) {
             d_sim_ci_lb__group <- d_sim_ci_lb__group[-zero_idx]
@@ -341,7 +340,7 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
         }
         if (length(r_sq_zero_idx) > 0) {
           r_sq__group <- r_sq__group[-zero_idx]
-          r_sq_se__group <- r_sq_se__group[-zero_idx]
+          # r_sq_se__group <- r_sq_se__group[-zero_idx]
 
           if (testing) {
             r_sq_sim_ci_lb__group <- r_sq_sim_ci_lb__group[-zero_idx]
@@ -351,25 +350,25 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
 
         # store d_avg, sim_ci_lb_avg, and sim_ci_ub_avg in data_group list as a list
 
-        v$data_group[[paste0(grouping_var, "_", level, "_reference_", ref)]][[combo_name]]$d <- d__group
-        v$data_group[[paste0(grouping_var, "_", level, "_reference_", ref)]][[combo_name]]$se <- d_se__group
+        v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$d <- d__group
+        # v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$se <- d_se__group
 
-        v$data_group[[paste0(grouping_var, "_", level, "_reference_", ref)]][[combo_name]]$r_sq <- r_sq__group
-        v$data_group[[paste0(grouping_var, "_", level, "_reference_", ref)]][[combo_name]]$r_sq_se <- r_sq_se__group
+        v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$r_sq <- r_sq__group
+        # v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$r_sq_se <- r_sq_se__group
 
-        v$data_group[[paste0(grouping_var, "_", level, "_reference_", ref)]][[combo_name]]$sim_ci_lb <- d_sim_ci_lb__group
-        v$data_group[[paste0(grouping_var, "_", level, "_reference_", ref)]][[combo_name]]$sim_ci_ub <- d_sim_ci_ub__group
-        v$data_group[[paste0(grouping_var, "_", level, "_reference_", ref)]][[combo_name]]$r_sq_sim_ci_lb <- r_sq_sim_ci_lb__group
-        v$data_group[[paste0(grouping_var, "_", level, "_reference_", ref)]][[combo_name]]$r_sq_sim_ci_ub <- r_sq_sim_ci_ub__group
+        v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$sim_ci_lb <- d_sim_ci_lb__group
+        v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$sim_ci_ub <- d_sim_ci_ub__group
+        v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$r_sq_sim_ci_lb <- r_sq_sim_ci_lb__group
+        v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$r_sq_sim_ci_ub <- r_sq_sim_ci_ub__group
 
         # store the study info in the study_stat dataframe
 
-        v$study_group <- rbind(v$study_group, data.frame(group_level = level, ref = ref, name = paste0(grouping_var, "_", level, "_reference_", ref)))
+        v[[meta_str]]$study <- rbind(v[[meta_str]]$study, data.frame(group_level = level, ref = ref, name = paste0(level, "_reference_", ref)))
 
         # store intersection masks
 
         # TODO: pass this up through plotter for visualization
-        v$brain_masks_group[[paste0(grouping_var, "_", level, "_reference_", ref)]][[combo_name]]$mask <- intersection_mask
+        v[[meta_str]]$brain_masks[[paste0(level, "_reference_", ref)]][[combo_name]]$mask <- intersection_mask
 
       }
     }
