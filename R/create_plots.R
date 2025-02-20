@@ -79,7 +79,7 @@ create_plots <- function(plot_data_list, plot_type = 'simci', add_description = 
           max_cons_estimate = x$extra_study_details$max_cons_estimate,
           percent_not_zero = x$extra_study_details$percent_not_zero,
           n_variables = length(x$data$cons_estimate),
-          cons_mv_estimate = x$extra_study_details$mv_ci[1]
+          cons_mv_estimate = x$extra_study_details$mv_ci[[1]]
         )
       })
 
