@@ -11,7 +11,7 @@
 #' @param pp A list of plot parameters
 #' @param plot_data_list A list containing effect size data for plotting:
 #'  - `data`: A list containing sorted & downsampled effect size data & helpers: estimate, cons_estimate, lb, ub, below_cross_idx, and above_cross_idx
-#'  - `summary_info`: A list containing extra descriptive info: percent_not_zero, max_cons_effect, group_by_title, and n_title
+#'  - `summary_info`: A list containing extra descriptive info: percent_not_zero, max_cons_estimate, group_by_title, and n_title
 #'  - `mv_data`: A list containing multivariate effect size data: estimate, lb, and ub
 #'  - `study_details`: A list of original study details: orig_stat_type, test_component_1, test_component_2, dataset, map_type, group, and ref
 #'
@@ -103,7 +103,7 @@ plot_simci_panel <- function(pp, plot_data_list) {
 #' @param pp A list of plot parameters
 #' @param plot_data_list A list containing effect size data for plotting:
 #'  - `data`: A list containing sorted & downsampled effect size data & helpers: estimate, cons_estimate, lb, ub, below_cross_idx, and above_cross_idx
-#'  - `summary_info`: A list containing extra descriptive info: percent_not_zero, max_cons_effect, group_by_title, and n_title
+#'  - `summary_info`: A list containing extra descriptive info: percent_not_zero, max_cons_estimate, group_by_title, and n_title
 #'  - `mv_data`: A list containing multivariate effect size data: estimate, lb, and ub
 #'  - `study_details`: A list of original study details: orig_stat_type, test_component_1, test_component_2, dataset, map_type, group, and ref
 #'
@@ -164,7 +164,7 @@ plot_density_panel <- function(pp, plot_data_list) {
 #' @param pp A list of plot parameters
 #' @param plot_data_list A list containing effect size data for plotting:
 #'  - `data`: A list containing sorted & downsampled effect size data & helpers: estimate, cons_estimate, lb, ub, below_cross_idx, and above_cross_idx
-#'  - `summary_info`: A list containing extra descriptive info: percent_not_zero, max_cons_effect, group_by_title, and n_title
+#'  - `summary_info`: A list containing extra descriptive info: percent_not_zero, max_cons_estimate, group_by_title, and n_title
 #'  - `mv_data`: A list containing multivariate effect size data: estimate, lb, and ub
 #'  - `study_details`: A list of original study details: orig_stat_type, test_component_1, test_component_2, dataset, map_type, group, and ref
 #'
@@ -288,7 +288,7 @@ create_nifti <- function(nifti_template, data, mask) {
 #' @param pp A list of plot parameters
 #' @param plot_data_list A list containing effect size data for plotting:
 #'  - `data`: A list containing sorted & downsampled effect size data & helpers: estimate, cons_estimate, lb, ub, below_cross_idx, and above_cross_idx
-#'  - `summary_info`: A list containing extra descriptive info: percent_not_zero, max_cons_effect, group_by_title, and n_title
+#'  - `summary_info`: A list containing extra descriptive info: percent_not_zero, max_cons_estimate, group_by_title, and n_title
 #'  - `mv_data`: A list containing multivariate effect size data: estimate, lb, and ub
 #'  - `study_details`: A list of original study details: orig_stat_type, test_component_1, test_component_2, dataset, map_type, group, and ref
 #'
@@ -459,7 +459,7 @@ plot_full_mat <- function(triangle_ordered, pooled = FALSE, ukb = FALSE, mapping
 #'
 #' @param p A ggplot object to which the labels will be added.
 #' @param study_details A list of original study details: orig_stat_type, test_component_1, test_component_2, dataset, map_type, group, and ref.
-#' @param extra_study_details A list containing extra descriptive info: percent_not_zero, max_cons_effect, group_by_title, n_title, mv_estimate, and mv_ci.
+#' @param extra_study_details A list containing extra descriptive info: percent_not_zero, max_cons_estimate, group_by_title, n_title, mv_estimate, and mv_ci.
 #'
 #' @return A ggplot object with summary labels.
 #' @export
@@ -487,7 +487,7 @@ add_plot_description <- function(p, study_details, extra_study_details) {
                          "Map: ", study_details$map_type, "    |    ",
                          "Sample Size: ", extra_study_details$n_title)
 
-    bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
+    bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_estimate, "\n",
                           "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%\n",
                           "Multivariate effect size: ", round(extra_study_details$mv_estimate, 2), " [", round(extra_study_details$mv_ci[[1]], 2), ", ", round(extra_study_details$mv_ci[[2]], 2), "]")
 
@@ -498,11 +498,11 @@ add_plot_description <- function(p, study_details, extra_study_details) {
 
     # if field cons_mv_estimate exists in extra_study_details_multi, add to bottom text # TODO: currently not defined when using group_data
     if ("max_cons_mv_estimate" %in% names(extra_study_details)) {
-      bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
+      bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_estimate, "\n",
                             "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%\n",
                             "Max conservative multivariate effect size: ", round(extra_study_details$max_cons_mv_estimate, 2))
     } else {
-      bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
+      bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_estimate, "\n",
                             "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%")
     }
   }
