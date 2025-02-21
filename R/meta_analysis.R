@@ -16,7 +16,7 @@
 #' # meta_analysis(v,v$brain_masks, "pooling.none.motion.none.mv.none")
 meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category") {
 
-  testing <- FALSE
+  testing <- TRUE
 
   # libraries & functions
 
@@ -264,7 +264,7 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
           r_sq_sim_ci_ub__group <- d__group
           # r_sq_se__group <- d__group
 
-          level <- 1 - (0.05 / n_vars) # confidence level for simultaneous CIs
+          ci_level <- 1 - (0.05 / n_vars) # confidence level for simultaneous CIs
 
           start_time <- Sys.time()
 
@@ -292,16 +292,16 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
               } else { # do meta
 
                 d_meta_analysis <- NULL
-                d_meta_analysis <- rma.uni(yi = d__all[this_variable,], se = d_se__all[this_variable,], method = c("REML","DL")) # added alternative closed form method in case REML doesn't converge
+                d_meta_analysis <- rma.uni(yi = d__all[this_variable,], se = d_se__all[this_variable,], method = c("REML","DL"), level = ci_level) # added alternative closed form method in case REML doesn't converge
                 # d_meta_analysis <- rma.uni(yi = d__all[this_variable,], se = d_se__all[this_variable,], method = "REML", control=list(stepadj=0.5, maxiter=1000)) # added control to help with convergence
 
                 d__group[this_variable] <- d_meta_analysis$b
 
-                this_ci <- confint(d_meta_analysis, level = level)
-                d_sim_ci_lb__group[this_variable] <- this_ci$ci.lb
-                d_sim_ci_ub__group[this_variable] <- this_ci$ci.ub
-                # d_sim_ci_lb__group[this_variable] <- d_meta_analysis$ci.lb # TODO: here and below - re-specify alpha/n_vars for corrected CI
-                # d_sim_ci_ub__group[this_variable] <- d_meta_analysis$ci.ub
+                # this_ci <- confint(d_meta_analysis, level = ci_level)
+                # d_sim_ci_lb__group[this_variable] <- this_ci$ci.lb
+                # d_sim_ci_ub__group[this_variable] <- this_ci$ci.ub
+                d_sim_ci_lb__group[this_variable] <- d_meta_analysis$ci.lb # TODO: here and below - re-specify alpha/n_vars for corrected CI
+                d_sim_ci_ub__group[this_variable] <- d_meta_analysis$ci.ub
               }
 
               # For r_sq: do meta only if not empty or NA; otherwise set NA
@@ -314,16 +314,16 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
               } else {
 
                 r_sq_meta_analysis <- NULL
-                r_sq_meta_analysis <- rma.uni(yi = r_sq__all[this_variable,], se = r_sq_se__all[this_variable,], method = c("REML","DL")) # added alternative closed form method in case REML doesn't converge
+                r_sq_meta_analysis <- rma.uni(yi = r_sq__all[this_variable,], se = r_sq_se__all[this_variable,], method = c("REML","DL"), level = ci_level) # added alternative closed form method in case REML doesn't converge
                 # r_sq_meta_analysis <- rma.uni(yi = r_sq__all[this_variable,], se = r_sq_se__all[this_variable,], method = "REML", control=list(stepadj=0.5, maxiter=1000))
 
                 r_sq__group[this_variable] <- r_sq_meta_analysis$b
 
-                this_ci <- confint(r_sq_meta_analysis, level = level)
-                r_sq_sim_ci_lb__group[this_variable] <- this_ci$ci.lb
-                r_sq_sim_ci_ub__group[this_variable] <- this_ci$ci.ub
-                # r_sq_sim_ci_lb__group[this_variable] <- r_sq_meta_analysis$ci.lb
-                # r_sq_sim_ci_ub__group[this_variable] <- r_sq_meta_analysis$ci.ub
+                # this_ci <- confint(r_sq_meta_analysis, level = ci_level)
+                # r_sq_sim_ci_lb__group[this_variable] <- this_ci$ci.lb
+                # r_sq_sim_ci_ub__group[this_variable] <- this_ci$ci.ub
+                r_sq_sim_ci_lb__group[this_variable] <- r_sq_meta_analysis$ci.lb
+                r_sq_sim_ci_ub__group[this_variable] <- r_sq_meta_analysis$ci.ub
               }
 
             }
