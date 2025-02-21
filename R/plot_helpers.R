@@ -489,7 +489,7 @@ add_plot_description <- function(p, study_details, extra_study_details) {
 
     bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
                           "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%\n",
-                          "Multivariate effect size: ", round(extra_study_details$mv_estimate, 2), " [", round(extra_study_details$mv_ci[1], 2), ", ", round(extra_study_details$mv_ci[2], 2), "]")
+                          "Multivariate effect size: ", round(extra_study_details$mv_estimate, 2), " [", round(extra_study_details$mv_ci[[1]], 2), ", ", round(extra_study_details$mv_ci[[2]], 2), "]")
 
   } else {
 
