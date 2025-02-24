@@ -24,16 +24,30 @@
 plot_simci_panel <- function(pp, plot_data_list) {
 
   # add simci-specific plot params
-  pp$non_overlap_colors <- rgb(177/255, 207/255, 192/255, alpha = 0.5)
-  pp$overlap_colors <- rgb(237/255, 185/255, 185/255, alpha = 0.5)
+  pp$non_overlap_colors <- "#4ECDC4"
+  pp$overlap_colors <- "#FF6F61"
+  # pp$non_overlap_colors <- rgb(177/255, 207/255, 192/255, alpha = 0.5)
+  # pp$overlap_colors <- rgb(237/255, 185/255, 185/255, alpha = 0.5)
+  pp$alpha_ribbon <- 0.3
+  pp$alpha_line <- 1
   pp$intercept_line_color <- "#ba2d25"
-  pp$intercept_line_size <- 0.4
+  pp$intercept_line_size <- 0.3
   pp$xlabel <- "Edges / Voxels, sorted by effect size"
   pp$ylabel <- "Effect Size"
 
+  # little function to simplify plotting
+  add_geom_layers <- function(p, data, color, alpha_line, alpha_ribbon) {
+    if (nrow(data) > 1) {
+      p <- p +
+        geom_line(data = data, aes(x = x, y = estimate), color = color, alpha = alpha_line) +
+        geom_ribbon(data = data, aes(x = x, ymin = lb, ymax = ub), fill = color, alpha = alpha_ribbon)
+    }
+    return(p)
+  }
+
   # make plot object
 
-  p <- ggplot()
+  p <- ggplot() + geom_hline(yintercept = 0, color = pp$intercept_line_color, linetype = "dashed", size = pp$intercept_line_size)
 
   for (i in seq_along(plot_data_list)) {
 
@@ -48,53 +62,25 @@ plot_simci_panel <- function(pp, plot_data_list) {
     above_cross_idx <- plot_data_list[[i]]$data$above_cross_idx
 
     # set y limits
-    if (max(abs(c(plot_df$lb,plot_df$ub))) > pp$effect_size_thresh) {
+    # if (max(abs(c(plot_df$lb,plot_df$ub))) > pp$effect_size_thresh) {
       pp$ylim = pp$effect_size_limits_big
-    } else {
-      pp$ylim = pp$effect_size_limits_small
-    }
+    # } else {
+    #   pp$ylim = pp$effect_size_limits_small
+    # }
 
     # plot
-    p <- p +
-      geom_line(data = plot_df, aes(x = x, y = estimate)) +
-      geom_ribbon(data = subset(plot_df, x <= below_cross_idx),
-                  aes(x = x, ymin = lb, ymax = ub),
-                  fill = pp$non_overlap_colors) +
-      geom_ribbon(data = subset(plot_df, x >= below_cross_idx & x <= above_cross_idx),
-                  aes(x = x, ymin = lb, ymax = ub),
-                  fill = pp$overlap_colors) +
-      geom_ribbon(data = subset(plot_df, x >= above_cross_idx),
-                  aes(x = x, ymin = lb, ymax = ub),
-                  fill = pp$non_overlap_colors) +
-      geom_hline(yintercept = 0, color = pp$intercept_line_color, linetype = "dashed", size = pp$intercept_line_size)
+      p <- add_geom_layers(p, subset(plot_df, x <= below_cross_idx), pp$non_overlap_colors, pp$alpha_line, pp$alpha_ribbon)
+      p <- add_geom_layers(p, subset(plot_df, x >= below_cross_idx & x <= above_cross_idx), pp$overlap_colors, pp$alpha_line, pp$alpha_ribbon)
+      p <- add_geom_layers(p, subset(plot_df, x >= above_cross_idx), pp$non_overlap_colors, pp$alpha_line, pp$alpha_ribbon)
+
   }
 
   p <- p + labs(x = pp$xlabel, y = pp$ylabel) +
     scale_y_continuous(limits = pp$ylim) +
     theme_classic() +
-    theme(axis.line.x = element_blank(), axis.ticks.x = element_blank(), axis.text.x = element_blank())
+    theme(axis.line.x = element_blank(), axis.ticks.x = element_blank(), axis.text.x = element_blank(), axis.text.y = pp$axis_text_size)
 
   return(p)
-
-  # original, sans ggplot (base r)
-  #   plot(plot_data_list[[i]]$data$estimate, type = "l", ylim = c(min(plot_data_list[[i]]$data$lb, na.rm = TRUE), max(plot_data_list[[i]]$data$ub, na.rm = TRUE)),
-  #      xlab = "Edges/Voxels", ylab = "Cohen's d", axes = FALSE)
-  #   # green: CI entirely < zero
-  #   polygon(c(1:plot_data_list[[i]]$data$below_cross_idx, rev(1:plot_data_list[[i]]$data$below_cross_idx)),
-  #           c(plot_data_list[[i]]$data$ub[1:plot_data_list[[i]]$data$below_cross_idx], rev(plot_data_list[[i]]$data$lb[1:plot_data_list[[i]]$data$below_cross_idx])),
-  #           col = rgb(177/255, 207/255, 192/255, alpha = 0.5), border = NA)
-  #   # red: CI including zero
-  #   polygon(c(plot_data_list[[i]]$data$below_cross_idx:plot_data_list[[i]]$data$above_cross_idx, rev(plot_data_list[[i]]$data$below_cross_idx:plot_data_list[[i]]$data$above_cross_idx)),
-  #           c(plot_data_list[[i]]$data$ub[plot_data_list[[i]]$data$below_cross_idx:plot_data_list[[i]]$data$above_cross_idx], rev(plot_data_list[[i]]$data$lb[plot_data_list[[i]]$data$below_cross_idx:plot_data_list[[i]]$data$above_cross_idx])),
-  #           col = rgb(237/255, 185/255, 185/255, alpha = 0.5), border = NA)
-  #   # green: CI entirely > zero
-  #   polygon(c(plot_data_list[[i]]$data$above_cross_idx:length(plot_data_list[[i]]$data$ub), rev(plot_data_list[[i]]$data$above_cross_idx:length(plot_data_list[[i]]$data$ub))),
-  #           c(plot_data_list[[i]]$data$ub[plot_data_list[[i]]$data$above_cross_idx:length(plot_data_list[[i]]$data$ub)], rev(plot_data_list[[i]]$data$lb[plot_data_list[[i]]$data$above_cross_idx:length(plot_data_list[[i]]$data$ub)])),
-  #           col = rgb(177/255, 207/255, 192/255, alpha = 0.5), border = NA)
-  #   # horizontal line at y = 0
-  #   abline(h = 0, col = "#ba2d25", lty = 3)
-  #   # left axis with labels parallel to the axis (las = 1)
-  #   axis(2, las = 1)
 }
 
 
@@ -117,10 +103,11 @@ plot_density_panel <- function(pp, plot_data_list) {
 
   # add density-specific plot params
 
-  pp$xlim <- c(-0.15, 0.15)
+  # pp$xlim <- c(-0.15, 0.15)
   pp$alpha <- 0.1
   pp$size <- 0.4
-  pp$colors__sample_size <- data.frame(labels = c("<1,000", "1,000-5,000", "5,000-10,000", ">10,000"), colors = c("#82A651", "#3AB7BE", "#E7786C", "#B873F7"), breaks_upper_lim = c(1000, 5000, 10000, Inf))
+  pp$colors__sample_size <- data.frame(labels = c("<1,000", "1,000-5,000", "5,000-10,000", ">10,000", "NA"), colors = c("#82A651", "#3AB7BE", "#E7786C", "#B873F7","#B59410"), breaks_upper_lim = c(1000, 5000, 10000, 999999999, Inf))
+  pp$hist_bin_width <- 0.001 # when there are all 0's, we want a very thin hist instead of density
   pp$xlabel <- "Effect Size"
   pp$ylabel <- "Density"
 
@@ -128,27 +115,49 @@ plot_density_panel <- function(pp, plot_data_list) {
 
   p <- ggplot()
 
+  # if plot data list is > 1 entry, set x limits to small
+  # if (length(plot_data_list) > 1) {
+    # pp$xlim = pp$effect_size_limits_smaller # small for overlapping
+  # } else if (length(plot_data_list) == 1) {
+  #   if (plot_data_list[[1]]$extra_study_details$n_title == "NA") {
+      pp$xlim = pp$effect_size_limits_smaller # very small for meta
+  #   } else {
+      # pp$xlim = pp$effect_size_limits_big # big for individual studies
+  #   }
+  # }
+
   for (i in seq_along(plot_data_list)) {
 
     # set x limits
-    if (max(abs(c(plot_data_list[[i]]$data$lb,plot_data_list[[i]]$data$ub))) > pp$effect_size_thresh) {
-      pp$xlim = pp$effect_size_limits_big
-    } else {
-      pp$xlim = pp$effect_size_limits_small
+    # if (max(abs(c(plot_data_list[[i]]$data$lb,plot_data_list[[i]]$data$ub))) > pp$effect_size_thresh) {
+      # pp$xlim = pp$effect_size_limits_big
+    # } else {
+      # pp$xlim = pp$effect_size_limits_small
+    # }
+
+    # color plots by binned sample size
+
+    if (plot_data_list[[i]]$extra_study_details$n_title == "n = ") {
+      plot_data_list[[i]]$extra_study_details$n_title <- "n = 9999999999" # hack to plot empty sample size in gold
     }
 
-    # create data for plot with effect size and binned sample size
     sample_size_category <- cut(as.numeric(gsub("n = ", "", plot_data_list[[i]]$extra_study_details$n_title)),
-                                breaks = c(-Inf, pp$colors__sample_size$breaks_upper_lim),
-                                labels = pp$colors__sample_size$labels)
+                            breaks = c(-Inf, pp$colors__sample_size$breaks_upper_lim),
+                            labels = pp$colors__sample_size$labels)
 
-    p <- p + geom_density(data = data.frame(value = plot_data_list[[i]]$data$cons_estimate, sample_size_category = sample_size_category),
+
+      if (length(unique(plot_data_list[[i]]$data$cons_estimate)) == 1) {
+        p <- p + geom_histogram(data = data.frame(value = plot_data_list[[i]]$data$cons_estimate, sample_size_category = sample_size_category),
+                                aes(x = value, fill = sample_size_category, color = sample_size_category), alpha = pp$alpha, size = pp$size, binwidth = pp$hist_bin_width)
+      } else {
+        p <- p + geom_density(data = data.frame(value = plot_data_list[[i]]$data$cons_estimate, sample_size_category = sample_size_category),
                           aes(x = value, fill = sample_size_category, color = sample_size_category), alpha = pp$alpha, size = pp$size) # for unique color per study, do: fill = i, color = i
+      }
   }
 
   p <- p + theme_minimal() + labs(x = pp$xlabel, y = pp$ylabel) +
     xlim(pp$xlim) +
-    theme(legend.position = "none") +
+    theme(legend.position = "none", axis.text.y = pp$axis_text_size, axis.text.x = pp$axis_text_size) +
     scale_fill_manual(values = pp$colors__sample_size$colors, breaks = pp$colors__sample_size$labels) +
     scale_color_manual(values = pp$colors__sample_size$colors, breaks = pp$colors__sample_size$labels)
 
@@ -207,47 +216,49 @@ plot_activation_panel <- function(pp, plot_data_list) {
   # make plot object
   # p <- ggplot()
 
-  for (i in seq_along(plot_data_list)) { # TODO: would be weird to plot overlapping for this...
+  if (length(plot_data_list) == 1) { # only allowing 1 since would be weird to plot overlapping for this...
+    for (i in seq_along(plot_data_list)) {
 
-    # create nifti for this data
+      # create nifti for this data
 
-    data <- plot_data_list[[i]]$data$estimate
-    mask <- plot_data_list[[i]]$extra_study_details$brain_masks$mask
-    nii <- create_nifti(template, data, mask)
+      data <- plot_data_list[[i]]$data$estimate
+      mask <- plot_data_list[[i]]$extra_study_details$brain_masks$mask
+      nii <- create_nifti(template, data, mask)
 
-    # set colorbar limits - TODO: this isn't doing anything
-    if (max(abs(data)) > pp$effect_size_thresh) {
-      pp$zlim_range = pp$effect_size_limits_big
-    } else {
-      pp$zlim_range = pp$effect_size_limits_small
+      # set colorbar limits - TODO: this isn't doing anything
+      if (max(abs(data)) > pp$effect_size_thresh) {
+        pp$zlim_range = pp$effect_size_limits_big
+      } else {
+        pp$zlim_range = pp$effect_size_limits_small
+      }
+
+      nii[nii == 0] <- NA
+      nii[nii > pp$zlim_range[2]] <- pp$zlim_range[2]
+      nii[nii < pp$zlim_range[1]] <- pp$zlim_range[1]
+
+      # pdf(file = NULL) # don't plot anywhere
+      # par(mar = c(1, 1, 1, 4))
+
+      # p <- grid.grabExpr({
+
+      ortho2(
+        x = nii,
+        y = nii,
+        crosshairs = TRUE,
+        NA.x = TRUE,
+        col.y = pp$col_y,
+        xyz = c(pp$xCoord, pp$yCoord, pp$zCoord),
+        bg = pp$bg,
+        text.color = pp$text_color,
+        #clabels = seq(-0.1, 0.1, length.out = 30),
+        ybreaks = pp$ybreaks,
+        ycolorbar = pp$ycolorbar,
+        mfrow = pp$mfrow
+        # zlim = pp$zlim_range
+      )
+      # })
+
     }
-
-    nii[nii == 0] <- NA
-    nii[nii > pp$zlim_range[2]] <- pp$zlim_range[2]
-    nii[nii < pp$zlim_range[1]] <- pp$zlim_range[1]
-
-    # pdf(file = NULL) # don't plot anywhere
-    # par(mar = c(1, 1, 1, 4))
-
-    # p <- grid.grabExpr({
-
-    ortho2(
-      x = nii,
-      y = nii,
-      crosshairs = TRUE,
-      NA.x = TRUE,
-      col.y = pp$col_y,
-      xyz = c(pp$xCoord, pp$yCoord, pp$zCoord),
-      bg = pp$bg,
-      text.color = pp$text_color,
-      #clabels = seq(-0.1, 0.1, length.out = 30),
-      ybreaks = pp$ybreaks,
-      ycolorbar = pp$ycolorbar,
-      mfrow = pp$mfrow
-      # zlim = pp$zlim_range
-    )
-    # })
-
   }
 
   # TODO: any extra additions
@@ -467,51 +478,67 @@ plot_full_mat <- function(triangle_ordered, pooled = FALSE, ukb = FALSE, mapping
 #' @examples
 #' # Example usage
 #' # add_plot_description(p, study_details, extra_study_details)
-add_plot_description <- function(p, study_details, extra_study_details) {
+add_plot_description <- function(p, pp, study_details, extra_study_details) {
 
   # add description-specific plot params
-  pp <- list()
-  pp$title_size <- 10
-  pp$caption_size <- 8
+  pp$title_size <- 21
+  pp$caption_size <- 10
+  pp$title_hjust <- 0.5
+  pp$title_lmargin <- -6 # adjust it a bit left of the plot y-axis
+  pp$caption_hjust <- 0
 
   pp$grouping_var_title <- switch(extra_study_details$grouping_var, # TODO: move w other pp but beware that singles may not have defined
                                   "none" = "None",
                                   "orig_stat_type" = "Statistic",
                                   "category" = "Outcome Measure")
 
+  # set text
+
+  bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
+                        "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%")
 
   if (extra_study_details$grouping_var == 'none') {
 
-    title_text <- paste0("Dataset: ", study_details$dataset, "    |    ",
-                         "Test: ", study_details$orig_stat_type, ": ", study_details$test_component_1, ", ", study_details$test_component_2, "    |    ",
-                         "Map: ", study_details$map_type, "    |    ",
-                         "Sample Size: ", extra_study_details$n_title)
+    title_text <- paste0("Dataset: ", study_details$dataset, "   |  ",
+                         "Test: ", study_details$orig_stat_type, ": ", study_details$test_component_1, ", ", study_details$test_component_2, "   |   ",
+                         "Sample Size: ", extra_study_details$n_title, "   |  ",
+                         "Map: ", study_details$map_type)
 
-    bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
-                          "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%\n",
-                          "Multivariate effect size: ", round(extra_study_details$mv_estimate, 2), " [", round(extra_study_details$mv_ci[[1]], 2), ", ", round(extra_study_details$mv_ci[[2]], 2), "]")
+    bottom_text <- paste0(bottom_text,"\n",
+                          "Multivariate effect size: ", round(extra_study_details$mv_estimate, 2), " [", round(extra_study_details$mv_ci[1], 2), ", ", round(extra_study_details$mv_ci[2], 2), "]")
+    # bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
+    #                       "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%\n",
+    #                       "Multivariate effect size: ", round(extra_study_details$mv_estimate, 2), " [", round(extra_study_details$mv_ci[1], 2), ", ", round(extra_study_details$mv_ci[2], 2), "]")
 
   } else {
 
-    title_text <- paste0(pp$grouping_var_title, ": ", extra_study_details$group_level, "    |    ",
+    title_text <- paste0(pp$grouping_var_title, ": ", extra_study_details$group_level, "   |  ",
                          "Reference Space: ", extra_study_details$ref)
 
     # if field cons_mv_estimate exists in extra_study_details_multi, add to bottom text # TODO: currently not defined when using group_data
     if ("max_cons_mv_estimate" %in% names(extra_study_details)) {
-      bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
-                            "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%\n",
+      bottom_text <- paste0(bottom_text,"\n",
                             "Max conservative multivariate effect size: ", round(extra_study_details$max_cons_mv_estimate, 2))
-    } else {
-      bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
-                            "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%")
+      # bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
+      #                       "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%\n",
+      #                       "Max conservative multivariate effect size: ", round(extra_study_details$max_cons_mv_estimate, 2))
+    # } else {
+      # bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
+      #                       "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%")
     }
+  }
+
+  if (pp$plot_detail_style == 'manuscript') { # for manuscript, remove labels from title
+    title_text <- gsub("(Dataset: )|  ([|])[^:]*:", "\\2", title_text)
+    title_text <- gsub("([|][^|]*$)", "", title_text)
   }
 
   p <- p +
     ggtitle(title_text) +
     labs(caption = bottom_text) +
-    theme(plot.title = element_text(hjust = 0.5, size = pp$title_size, face = "bold"),
-          plot.caption = element_text(hjust = 0, size = pp$caption_size))
+    theme(plot.title = element_text(hjust = pp$title_hjust, margin = margin(l = pp$title_lmargin, unit = "pt"),
+          size = pp$title_size, face = "bold"),
+          plot.caption = element_text(hjust = pp$caption_hjust, size = pp$caption_size))
 
   return(p)
 }

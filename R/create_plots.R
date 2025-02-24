@@ -30,7 +30,11 @@ create_plots <- function(plot_data_list, plot_type = 'simci', add_description = 
   # }
   pp$effect_size_limits_big <- c(-1.2, 1.2)
   pp$effect_size_limits_small <- c(-0.5, 0.5)
+  pp$effect_size_limits_smaller <- c(-0.15, 0.15)
   pp$effect_size_thresh <- 0.5
+  pp$axis_text_size = element_text(size = 17)
+
+  pp$plot_detail_style <- 'manuscript' # c('manuscript', 'Shiny') # for add_description
 
   # General setup
 
@@ -90,11 +94,11 @@ create_plots <- function(plot_data_list, plot_type = 'simci', add_description = 
       extra_study_details__overlapping$percent_not_zero <- sum(study_summary$percent_not_zero*study_summary$n_variables)/sum(study_summary$n_variables)
       extra_study_details__overlapping$max_cons_mv_estimate <- max(study_summary$cons_mv_estimate)
 
-      p <- add_plot_description(p, study_details__overlapping, extra_study_details__overlapping)
+      p <- add_plot_description(p, pp, study_details__overlapping, extra_study_details__overlapping)
 
     } else {
 
-      p <- add_plot_description(p, plot_data_list[[1]]$study_details, plot_data_list[[1]]$extra_study_details)
+      p <- add_plot_description(p, pp, plot_data_list[[1]]$study_details, plot_data_list[[1]]$extra_study_details)
 
     }
   }

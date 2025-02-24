@@ -9,7 +9,8 @@
 
 ## Load libraries
 
-utils_script_local <- "/Users/stephanienoble/Library/CloudStorage/GoogleDrive-s.noble@northeastern.edu/My Drive/Lab/xMore/Software/scripts/R/myscripts/effect_size/BrainEffeX_utils/"
+utils_script_local <- "/Users/steph/Library/CloudStorage/GoogleDrive-s.noble@northeastern.edu/My Drive/Lab/xMore/Software/scripts/R/myscripts/effect_size/BrainEffeX_utils/"
+# utils_script_local <- "/Users/stephanienoble/Library/CloudStorage/GoogleDrive-s.noble@northeastern.edu/My Drive/Lab/xMore/Software/scripts/R/myscripts/effect_size/BrainEffeX_utils/"
 load_all(utils_script_local) # load from local scripts - for testing
 #library(BrainEffeX.utils) # load from package
 
@@ -21,23 +22,39 @@ library(ggpubr)
 
 # plot params
 
-pooling <- 'none'     # 'none', 'net'
-motion <- 'none'      # 'none', 'stat_control', "full_residualization", "thresholding"
+all_pooling <- c('none')  # c('none','net')
+all_motion <- c('none')         # c('none', 'stat_control', 'full_residualization', 'thresholding')
 
 make_plots <- TRUE
 save_plots <- TRUE
 
-plot_type <- 'simci' # c('density', 'simci', 'spatial')
+all_plot_types <- c('simci','density')      # c('density', 'simci', 'spatial')
 add_plt_description <- TRUE
 
-plot_combination_style <- 'meta' # c('single','overlapping','meta')
-grouping_var <- 'orig_stat_type'    # 'none', 'category', 'orig_stat_type' # used for both meta-analysis and overlap plots - TODO: separate out?
+all_plot_combination_styles <- c('meta')   # c('single','overlapping','meta')
+all_grouping_var <- c('orig_stat_type')          # c('none', 'category', 'orig_stat_type') # used only for meta & overlap plots - TODO: separate out?
 effect_size_type <- 'd'
+
+rearrange_by_stat_type <- TRUE # for single plots
 
 # directories
 
-this_data_dir <- "/Users/stephanienoble/Library/CloudStorage/GoogleDrive-s.noble@northeastern.edu/My Drive/Lab/xMore/Software/scripts/R/myscripts/effect_size/BrainEffeX/data/"
-out_dir_basename <- "/Users/stephanienoble/Library/CloudStorage/GoogleDrive-s.noble@northeastern.edu/My Drive/Lab/Tasks-Ongoing/K99/Effect_Size/manuscript/figures/plots/"
+this_data_dir <- "/Users/steph/Library/CloudStorage/GoogleDrive-s.noble@northeastern.edu/My Drive/Lab/xMore/Software/scripts/R/myscripts/effect_size/BrainEffeX/data/"
+out_dir_basename <- "/Users/steph/Library/CloudStorage/GoogleDrive-s.noble@northeastern.edu/My Drive/Lab/Tasks-Ongoing/K99/Effect_Size/manuscript/figures/plots/"
+
+# this_data_dir <- "/Users/stephanienoble/Library/CloudStorage/GoogleDrive-s.noble@northeastern.edu/My Drive/Lab/xMore/Software/scripts/R/myscripts/effect_size/BrainEffeX/data/"
+# out_dir_basename <- "/Users/stephanienoble/Library/CloudStorage/GoogleDrive-s.noble@northeastern.edu/My Drive/Lab/Tasks-Ongoing/K99/Effect_Size/manuscript/figures/plots/"
+
+
+
+## Loop over plot types and styles
+
+for (plot_type in all_plot_types) {
+for (plot_combination_style in all_plot_combination_styles) {
+for (pooling in all_pooling) {
+for (motion in all_motion) {
+for (grouping_var in all_grouping_var) {
+
 
 
 ## Set up strings
@@ -64,12 +81,32 @@ if (!exists("v")) {
 # TODO: move to combine_gl with other more intensive processing / stat estimates & run all relevantmeta beforehand
 
 if (plot_combination_style == 'meta') {
+
   meta_str <- paste0('meta_',grouping_var)
+
   if (!(meta_str %in% names(v))) { # check if this meta has already been run
-    v <- meta_analysis(v, v$brain_masks, combo_name, grouping_var = grouping_var)
     # TODO: will also have to catch the case where d is defined but r_sq is not
+
+    meta_fn_dir <- system.file("meta/", package = "BrainEffeX.utils") # TODO: set this somewhere else
+    meta_fn <- file.path(meta_fn_dir, "v.RData")
+    # save(v, file = meta_fn)
+
+    if (file.exists(meta_fn)) { # try to read pre-saved meta-analysis
+      load(meta_fn)
+      if (!(meta_str %in% names(v))) { # check again
+        v <- meta_analysis(v, v$brain_masks, combo_name, grouping_var = grouping_var)
+      }
+    } else {
+      v <- meta_analysis(v, v$brain_masks, combo_name, grouping_var = grouping_var)
+    }
+
   }
 }
+
+
+
+
+
 
 
 ## Set up unique identifiers for each plot
@@ -85,12 +122,25 @@ plot_info__ref <- list() # each row = ref(s) used for a study or grouping variab
 
 if (plot_combination_style == 'single') {  # name by study
 
+  all_study_names <- names(v$data)
+
   for (i in 1:length(v$data)) {
-    plot_info__idx[[names(v$data)[[i]]]] <- i
-    plot_info__grouping_var[[names(v$data)[[i]]]] <- "none"  # overwrite any other grouping var if doing single plots single
-    plot_info__group_level[[names(v$data)[[i]]]] <- NA
-    plot_info__ref[[names(v$data)[[i]]]] <- v$study$ref[i]
+    plot_info__idx[[all_study_names[[i]]]] <- i
+    plot_info__grouping_var[[all_study_names[[i]]]] <- "none"  # overwrite any other grouping var if doing single plots
+    plot_info__group_level[[all_study_names[[i]]]] <- NA
+    plot_info__ref[[all_study_names[[i]]]] <- v$study$ref[i]
   }
+
+
+  # sort all rows of plot_info__idx by orig_stat_type, with studies sharing same stat type next to each other
+  if (rearrange_by_stat_type) {
+    orig_stat_type_order <- order(v$study$orig_stat_type)
+    plot_info__idx <- plot_info__idx[orig_stat_type_order]
+    plot_info__grouping_var <- plot_info__grouping_var[orig_stat_type_order]
+    plot_info__group_level <- plot_info__group_level[orig_stat_type_order]
+    plot_info__ref <- plot_info__ref[orig_stat_type_order]
+  }
+
 
 } else if (plot_combination_style == 'meta') { # name by average of grouping var
 
@@ -131,6 +181,8 @@ plot_info <- data.frame(
   row.names = names(plot_info__idx),
   stringsAsFactors = FALSE
 )
+rm(plot_info__idx, plot_info__grouping_var, plot_info__group_level, plot_info__ref)
+
 
 
 ## Make Plots
@@ -202,7 +254,7 @@ if (make_plots) {
   # create_plots, which gets passed to plot_sim_ci, etc.
   # Should at least set all panel / canvas dimensions here
   pp <- list()
-  pp$width_per_panel <- 6
+  pp$width_per_panel <- 7
   pp$height_per_panel <- 5
   pp$res <- 300
   pp$units <- "in"
@@ -238,8 +290,8 @@ if (make_plots) {
   # plot multiple panels
 
   multi_plot <- ggarrange(plotlist = panel_list, ncol=pp$ncol, nrow=pp$row)
-  multi_plot <- annotate_figure(multi_plot,
-                                top = text_grob(paste0(plot_type, ' (motion=', motion,")"), color = "black", face = "bold", size = 11))
+  # multi_plot <- annotate_figure(multi_plot,
+  #                               top = text_grob(paste0(plot_type, ' (motion=', motion,")"), color = "black", face = "bold", size = 11))
 
   print(multi_plot)
 
@@ -255,4 +307,15 @@ if (make_plots) {
   if (save_plots) {
     dev.off()
   }
+
 }
+
+
+## close loop over plot types and styles
+} # pooling
+} # plot_combination_style
+} # plot_type
+} # motion
+} # grouping_var
+
+

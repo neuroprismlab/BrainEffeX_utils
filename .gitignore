@@ -4,5 +4,6 @@
 .Rproj.user/
 .Rhistory
 .RData
+inst/meta
 .DS_Store
 old
