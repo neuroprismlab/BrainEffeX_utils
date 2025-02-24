@@ -40,7 +40,7 @@ prep_data_for_spatial_plot <- function(data, brain_masks, study_details, combo_n
       grouping_var = plot_info$grouping_var,
       group_level = plot_info$group_level,
       ref = plot_info$ref,
-      brain_masks = brain_masks[[combo_name]]
+      brain_masks = brain_masks
     ),
     study_details = study_details
   )
