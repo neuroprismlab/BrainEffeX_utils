@@ -24,8 +24,9 @@
 plot_simci_panel <- function(pp, plot_data_list) {
 
   # add simci-specific plot params
-  pp$non_overlap_colors <- rgb(177/255, 207/255, 192/255, alpha = 0.5)
-  pp$overlap_colors <- rgb(237/255, 185/255, 185/255, alpha = 0.5)
+  pp$non_overlap_colors_neg <- rgb(88, 90, 237, alpha = 0.5)
+  pp$non_overlap_colors_pos <- rgb(237, 88, 88, alpha = 0.5)
+  pp$overlap_colors <- rgb(194, 194, 194, alpha = 0.5)
   pp$intercept_line_color <- "#ba2d25"
   pp$intercept_line_size <- 0.4
   pp$xlabel <- "Edges / Voxels, sorted by effect size"
