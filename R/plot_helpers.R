@@ -60,13 +60,13 @@ plot_simci_panel <- function(pp, plot_data_list) {
       geom_line(data = plot_df, aes(x = x, y = estimate)) +
       geom_ribbon(data = subset(plot_df, x <= below_cross_idx),
                   aes(x = x, ymin = lb, ymax = ub),
-                  fill = pp$non_overlap_colors) +
+                  fill = pp$non_overlap_colors_neg) +
       geom_ribbon(data = subset(plot_df, x >= below_cross_idx & x <= above_cross_idx),
                   aes(x = x, ymin = lb, ymax = ub),
                   fill = pp$overlap_colors) +
       geom_ribbon(data = subset(plot_df, x >= above_cross_idx),
                   aes(x = x, ymin = lb, ymax = ub),
-                  fill = pp$non_overlap_colors) +
+                  fill = pp$non_overlap_colors_pos) +
       geom_hline(yintercept = 0, color = pp$intercept_line_color, linetype = "dashed", size = pp$intercept_line_size)
   }
 
