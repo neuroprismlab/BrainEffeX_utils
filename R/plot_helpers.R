@@ -21,7 +21,7 @@
 #' @examples
 #' # Example usage
 #' # plot_simci_panel(plot_data)
-plot_simci_panel <- function(pp, plot_data_list) {
+plot_simci_panel <- function(pp, plot_data_list, meta = FALSE) {
 
   # add simci-specific plot params
   pp$non_overlap_colors_neg <- rgb(88/255, 90/255, 237/255, alpha = 0.5)
@@ -51,6 +51,8 @@ plot_simci_panel <- function(pp, plot_data_list) {
     # set y limits
     if (max(abs(c(plot_df$lb,plot_df$ub))) > pp$effect_size_thresh) {
       pp$ylim = pp$effect_size_limits_big
+    } else if (meta == TRUE) {
+      pp$ylim = pp$effect_size_limits_meta
     } else {
       pp$ylim = pp$effect_size_limits_small
     }

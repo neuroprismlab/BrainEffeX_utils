@@ -17,7 +17,7 @@
 #' @examples
 #' # Example usage
 #' # create_plots(pd)
-create_plots <- function(plot_data_list, plot_type = 'simci', add_description = FALSE) {
+create_plots <- function(plot_data_list, plot_type = 'simci', add_description = FALSE, meta = FALSE) {
 
   library(ggplot2)
 
@@ -28,9 +28,11 @@ create_plots <- function(plot_data_list, plot_type = 'simci', add_description = 
   # } else {
   #   pp$mar <- c(3, 4, 5, 2)
   # }
+
   pp$effect_size_limits_big <- c(-1.2, 1.2)
   pp$effect_size_limits_small <- c(-0.5, 0.5)
   pp$effect_size_thresh <- 0.5
+  pp$effect_size_limits_meta <- c(-2, 2)
 
   # General setup
 
@@ -44,7 +46,7 @@ create_plots <- function(plot_data_list, plot_type = 'simci', add_description = 
   # par(mar=pp$mar)
   if (plot_type == 'simci') {
 
-    p <- plot_simci_panel(pp, plot_data_list)
+    p <- plot_simci_panel(pp, plot_data_list, meta = meta)
     # p <- plot_simci_panel(plot_data_list)
 
   } else if (plot_type == 'density') {
