@@ -49,10 +49,10 @@ plot_simci_panel <- function(pp, plot_data_list, meta = FALSE) {
     above_cross_idx <- plot_data_list[[i]]$data$above_cross_idx
 
     # set y limits
-    if (max(abs(c(plot_df$lb,plot_df$ub))) > pp$effect_size_thresh) {
-      pp$ylim = pp$effect_size_limits_big
-    } else if (meta == TRUE) {
+    if (meta) {
       pp$ylim = pp$effect_size_limits_meta
+    } else if (max(abs(c(plot_df$lb,plot_df$ub))) > pp$effect_size_thresh) {
+      pp$ylim = pp$effect_size_limits_big
     } else {
       pp$ylim = pp$effect_size_limits_small
     }
