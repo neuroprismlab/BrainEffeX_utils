@@ -33,7 +33,7 @@ create_plots <- function(plot_data_list, plot_type = 'simci', add_description = 
   pp$effect_size_limits_small <- c(-0.5, 0.5)
   pp$effect_size_thresh <- 0.5
   pp$effect_size_limits_meta <- c(-2, 2)
-  pp$r_sq_limits_meta <- c(-0.4, 0.4)
+  pp$r_sq_limits_meta <- c(-0.2, 0.2)
 
   # General setup
 
