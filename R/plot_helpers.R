@@ -24,9 +24,8 @@
 plot_simci_panel <- function(pp, plot_data_list, meta = FALSE) {
 
   # add simci-specific plot params
-  pp$non_overlap_colors_neg <- rgb(88/255, 90/255, 237/255, alpha = 0.5)
-  pp$non_overlap_colors_pos <- rgb(237/255, 88/255, 88/255, alpha = 0.5)
-  pp$overlap_colors <- rgb(194/255, 194/255, 194/255, alpha = 0.5)
+  pp$non_overlap_colors <- rgb(177/255, 207/255, 192/255, alpha = 0.5)
+  pp$overlap_colors <- rgb(237/255, 185/255, 185/255, alpha = 0.5)
   pp$intercept_line_color <- "#ba2d25"
   pp$intercept_line_size <- 0.4
   pp$xlabel <- "Edges / Voxels, sorted by effect size"
@@ -51,6 +50,7 @@ plot_simci_panel <- function(pp, plot_data_list, meta = FALSE) {
     # set y limits
     if (meta) {
       pp$ylim = pp$effect_size_limits_meta
+      pp$non_overlap_colors <- pp$overlap_colors
     } else if (max(abs(c(plot_df$lb,plot_df$ub))) > pp$effect_size_thresh) {
       pp$ylim = pp$effect_size_limits_big
     } else {
@@ -62,13 +62,13 @@ plot_simci_panel <- function(pp, plot_data_list, meta = FALSE) {
       geom_line(data = plot_df, aes(x = x, y = estimate)) +
       geom_ribbon(data = subset(plot_df, x <= below_cross_idx),
                   aes(x = x, ymin = lb, ymax = ub),
-                  fill = pp$non_overlap_colors_neg) +
+                  fill = pp$non_overlap_colors) +
       geom_ribbon(data = subset(plot_df, x >= below_cross_idx & x <= above_cross_idx),
                   aes(x = x, ymin = lb, ymax = ub),
                   fill = pp$overlap_colors) +
       geom_ribbon(data = subset(plot_df, x >= above_cross_idx),
                   aes(x = x, ymin = lb, ymax = ub),
-                  fill = pp$non_overlap_colors_pos) +
+                  fill = pp$non_overlap_colors) +
       geom_hline(yintercept = 0, color = pp$intercept_line_color, linetype = "dashed", size = pp$intercept_line_size)
   }
 
