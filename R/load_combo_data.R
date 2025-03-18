@@ -34,13 +34,13 @@ load_combo_data <- function(data_dir = "data/", combo = "pooling.none.motion.non
   anatomical_ref_nii_path <- paste0(data_dir, "plotting/MNI152_T1_2mm_Brain.nii.gz")
 
   # Identify the data file matching the pattern
-  data_file <- paste0(compressed_data_dir, "combo_", combo, ".RData")
+  data_file <- paste0("combo_", combo, ".RData")
 
   # Print status for debugging
   cat("Loading data...\n", data_file, "\n", sep = "")
 
   # Load the RData file: assumes it contains this_combo_data which contains brain_masks, data, and study
-  load(paste0(data_dir, data_file))
+  load(paste0(compressed_data_dir, data_file))
 
 
   # Load the template NIfTI file for visualization
