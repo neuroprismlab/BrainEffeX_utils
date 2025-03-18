@@ -477,7 +477,7 @@ add_plot_description <- function(p, study_details, extra_study_details) {
 
   # add description-specific plot params
   pp <- list()
-  pp$title_size <- 10
+  pp$title_size <- 8
   pp$caption_size <- 8
 
   pp$grouping_var_title <- switch(extra_study_details$grouping_var, # TODO: move w other pp but beware that singles may not have defined
