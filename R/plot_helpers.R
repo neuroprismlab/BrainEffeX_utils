@@ -482,7 +482,7 @@ add_plot_description <- function(p, study_details, extra_study_details) {
 
   pp$grouping_var_title <- switch(extra_study_details$grouping_var, # TODO: move w other pp but beware that singles may not have defined
                                   "none" = "None",
-                                  "orig_stat_type" = "Statistic",
+                                  "statistic" = "Statistic",
                                   "category" = "Outcome Measure")
 
 
