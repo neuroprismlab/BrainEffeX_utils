@@ -477,8 +477,8 @@ add_plot_description <- function(p, study_details, extra_study_details) {
 
   # add description-specific plot params
   pp <- list()
-  pp$title_size <- 8
-  pp$caption_size <- 8
+  pp$title_size <- 10
+  pp$caption_size <- 9
 
   pp$grouping_var_title <- switch(extra_study_details$grouping_var, # TODO: move w other pp but beware that singles may not have defined
                                   "none" = "None",
@@ -489,7 +489,7 @@ add_plot_description <- function(p, study_details, extra_study_details) {
   if (extra_study_details$grouping_var == 'none') {
 
     title_text <- paste0("Dataset: ", study_details$dataset, "    |    ",
-                         "Test: ", study_details$orig_stat_type, ": ", study_details$test_component_1, ", ", study_details$test_component_2, "    |    ",
+                         "Test: ", study_details$orig_stat_type, ": ", study_details$test_component_1, ", ", study_details$test_component_2, "\n",
                          "Map: ", study_details$map_type, "    |    ",
                          "Sample Size: ", extra_study_details$n_title)
 
