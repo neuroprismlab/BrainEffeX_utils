@@ -22,19 +22,19 @@ library(ggpubr)
 
 # plot params
 
-all_pooling <- c('none')  # c('none','net')
-all_motion <- c('none')         # c('none', 'stat_control', 'full_residualization', 'thresholding')
+all_effect_size_types <- c('d') # 'd' or 'r_sq' c('d', 'r_sq', 'd.full_res')
+
+all_motion <- c('regression')         # c('none', 'regression', 'threshold') # TODO: stat_control -> "...regression...$d", full_residualization -> "...regression...$d.full_res"
+all_pooling <- c('net')  # c('none','net')
+
+all_plot_combination_styles <- c('meta')   # c('single','overlapping','meta')
+all_plot_types <- c('spatial')      # c('density', 'simci', 'spatial')
+all_grouping_var <- c('orig_stat_type')          # c('none', 'category', 'orig_stat_type') # used only for meta & overlap plots - TODO: separate out?
 
 make_plots <- TRUE
 save_plots <- TRUE
-
-all_plot_types <- c('simci','density')      # c('density', 'simci', 'spatial')
-add_plt_description <- TRUE
-
-all_plot_combination_styles <- c('meta')   # c('single','overlapping','meta')
-all_grouping_var <- c('orig_stat_type')          # c('none', 'category', 'orig_stat_type') # used only for meta & overlap plots - TODO: separate out?
-effect_size_type <- 'd'
-
+save_logs <- TRUE
+add_plt_description <- TRUE # text at bottom of screen
 rearrange_by_stat_type <- TRUE # for single plots
 
 # directories
@@ -49,12 +49,14 @@ out_dir_basename <- "/Users/steph/Library/CloudStorage/GoogleDrive-s.noble@north
 
 ## Loop over plot types and styles
 
-for (plot_type in all_plot_types) {
 for (plot_combination_style in all_plot_combination_styles) {
+for (plot_type in all_plot_types) {
 for (pooling in all_pooling) {
 for (motion in all_motion) {
 for (grouping_var in all_grouping_var) {
+for (effect_size_type in all_effect_size_types) {
 
+print(paste0('Doing plot_combination_style: ', plot_combination_style, ' | plot_type: ', plot_type, ' | pooling: ', pooling, ' | motion: ', motion, ' | grouping_var: ', grouping_var))
 
 
 ## Set up strings
@@ -312,6 +314,7 @@ if (make_plots) {
 
 
 ## close loop over plot types and styles
+} # effect_size_type
 } # pooling
 } # plot_combination_style
 } # plot_type
