@@ -197,12 +197,14 @@ plot_activation_panel <- function(pp, plot_data_list) {
   #   pp$zCoord <- input$zCoord
   # }
 
+  pp$do_static_figs <- TRUE # TRUE = static figs (for manuscript), FALSE = interactions
   pp$xlabel <- "Effect Size"
   pp$ylabel <- "Spatial Map"
   pp$bg <- 'white'
   pp$text_color <- 'black'
-  pp$col_y <- colorspace::diverge_hsv(30)
-  pp$ybreaks <- seq(-1, 1, length.out = 31)
+  pp$ncol <- 40 # also controls number of ticks on colorbar
+  pp$col_y <- colorspace::diverge_hsv(pp$ncol)
+  # pp$n_colorbar_ticks <- 5
   pp$ycolorbar <- TRUE
   pp$mfrow <- c(3, 1)
   pp$xCoord <- 30
@@ -225,12 +227,13 @@ plot_activation_panel <- function(pp, plot_data_list) {
       mask <- plot_data_list[[i]]$extra_study_details$brain_masks$mask
       nii <- create_nifti(template, data, mask)
 
-      # set colorbar limits - TODO: this isn't doing anything
+      # set colorbar limits
       if (max(abs(data)) > pp$effect_size_thresh) {
-        pp$zlim_range = pp$effect_size_limits_big
+        pp$zlim_range <- pp$effect_size_limits_big
       } else {
-        pp$zlim_range = pp$effect_size_limits_small
+        pp$zlim_range <- pp$effect_size_limits_small
       }
+      pp$zlim_range <- pp$zlim_range/2
 
       nii[nii == 0] <- NA
       nii[nii > pp$zlim_range[2]] <- pp$zlim_range[2]
@@ -240,6 +243,10 @@ plot_activation_panel <- function(pp, plot_data_list) {
       # par(mar = c(1, 1, 1, 4))
 
       # p <- grid.grabExpr({
+
+      if (pp$do_static_figs) {
+        png("ortho_tmp.png", width = 800, height = 800)
+      }
 
       ortho2(
         x = nii,
@@ -251,11 +258,15 @@ plot_activation_panel <- function(pp, plot_data_list) {
         bg = pp$bg,
         text.color = pp$text_color,
         #clabels = seq(-0.1, 0.1, length.out = 30),
-        ybreaks = pp$ybreaks,
+        ybreaks = seq(pp$zlim_range[1], pp$zlim_range[2], length.out = pp$ncol+1),
+        clabels = round(seq(pp$zlim_range[1], pp$zlim_range[2], length.out = pp$ncol), 2),
         ycolorbar = pp$ycolorbar,
         mfrow = pp$mfrow
         # zlim = pp$zlim_range
       )
+      if (pp$do_static_figs) {
+        dev.off()
+      }
       # })
 
     }
@@ -265,7 +276,13 @@ plot_activation_panel <- function(pp, plot_data_list) {
   # p <- p + theme_minimal() + labs(x = pp$xlabel, y = pp$ylabel) +
   #   theme(legend.position = "none")
 
-  p<-list()
+  if (pp$do_static_figs) {
+    p <- ggplot() +
+      annotation_custom(rasterGrob(png::readPNG("ortho_tmp.png"), interpolate = TRUE), xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf)
+  } else {
+    p <- list()
+  }
+
   return(p)
 }
 
