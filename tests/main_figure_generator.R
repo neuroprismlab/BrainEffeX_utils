@@ -81,28 +81,44 @@ if (!exists("v")) {
 ## Run meta-analysis, if specified
 
 # TODO: move to combine_gl with other more intensive processing / stat estimates & run all relevantmeta beforehand
+run_meta <- FALSE
+try_meta_file <- FALSE
 
 if (plot_combination_style == 'meta') {
 
+  # setup string and filename
   meta_str <- paste0('meta_',grouping_var)
+  meta_fn_dir <- system.file("meta/", package = "BrainEffeX.utils") # TODO: set this somewhere else
+  meta_fn <- file.path(meta_fn_dir, "v.RData")
 
-  if (!(meta_str %in% names(v))) { # check if this meta has already been run
-    # TODO: will also have to catch the case where d is defined but r_sq is not
+  # check if this var contains the meta for this grouping var / combo
+  if (!(meta_str %in% names(v))) { # check if this grouping var already exists in data
+    try_meta_file <- TRUE
+  } else if (!(combo_name %in% names(v[[meta_str]]$data[[1]]))) { # check if this combo_name has been run
+    try_meta_file <- TRUE
+  }
 
-    meta_fn_dir <- system.file("meta/", package = "BrainEffeX.utils") # TODO: set this somewhere else
-    meta_fn <- file.path(meta_fn_dir, "v.RData")
-    # save(v, file = meta_fn)
+  # TODO: will also have to catch the case where d is defined but r_sq is not
 
+  # check if saved meta file contains the meta for this grouping var / combo
+  if (try_meta_file) {
     if (file.exists(meta_fn)) { # try to read pre-saved meta-analysis
       load(meta_fn)
-      if (!(meta_str %in% names(v))) { # check again
-        v <- meta_analysis(v, v$brain_masks, combo_name, grouping_var = grouping_var)
+      if (!(meta_str %in% names(v))) { # check again for grouping var
+        run_meta <- TRUE
+      } else if (!(combo_name %in% names(v[[meta_str]]$data[[1]]))) { # check again for combo
+        run_meta <- TRUE
       }
-    } else {
-      v <- meta_analysis(v, v$brain_masks, combo_name, grouping_var = grouping_var)
+    } else { # no file
+      run_meta <- TRUE
     }
 
   }
+}
+
+if (run_meta) {
+  v <- meta_analysis(v, v$brain_masks, combo_name, grouping_var = grouping_var)
+  save(v, file = meta_fn)
 }
 
 
