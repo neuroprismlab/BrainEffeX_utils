@@ -350,22 +350,19 @@ plot_connectivity_panel <- function(pp, plot_data_list) {
       #   pooled <- TRUE
       # } else { # unpooled
       mapping_path <-  system.file("data/parcellations/map268_subnetwork.csv", package = "BrainEffeX.utils")
-      pooled <- FALSE
       # }
     } else if (plot_data_list[[i]]$extra_study_details$ref[[1]] == "ukb_55") {
       mapping_path <- system.file("data/parcellations/map55_ukb.csv", package = "BrainEffeX.utils")
-      pooled <- FALSE
     } else {
       mapping_path <- NA
     }
-    rearrange <- !pooled # only rearrange edge-level
 
     #       template <- plot_data_list[[i]]$study_details$ref
 
     data <- plot_data_list[[i]]$data$estimate
     mask <- plot_data_list[[i]]$extra_study_details$brain_masks$mask
 
-    p <- plot_full_mat(data, rearrange = rearrange, pooled = pooled, mapping_path = mapping_path)
+    p <- plot_full_mat(pp, data, mapping_path = mapping_path)
 
   }
 
@@ -377,102 +374,140 @@ plot_connectivity_panel <- function(pp, plot_data_list) {
 }
 
 # plot_full_mat <- function(triangle_ordered, pooled = FALSE, ukb = FALSE, mapping_path = NA, save = TRUE, rearrange = TRUE, out_path = 'output', plot_name = 'matrix.png') {
-plot_full_mat <- function(triangle_ordered, pooled = FALSE, ukb = FALSE, mapping_path = NA, rearrange = TRUE) {
+plot_full_mat <- function(pp, triangle_ordered, ukb = FALSE, mapping_path = NA) {
   # takes an ordered triangle vector (without NAs) and plots the full matrix
 
   #TODO: look into heatmaply package for plotly interactive heatmap!
   # https://cran.r-project.org/web/packages/heatmaply/vignettes/heatmaply.html
 
+
   if (!is.na(mapping_path)) {
+
+    # Set extra plot params
+
+    pp$zlim <- pp$effect_size_limits_small/2
+    pp$label_angle <- 45
+    pp$boundary_color <- "black"
+    pp$boundary_width <- 0.4
+
+    # Structure data into full mat
+
+    # 1. determine whether we already pooled and whether diagonal included
+
     # load mapping
     mapping <- read.csv(mapping_path, header = TRUE)
-  }
 
-  # if the data is pooled, the number of nodes is determined from the map
-  if (pooled) {
-    nrow = length(unique(mapping$category))
-  } else {
-    nrow = (((-1 + sqrt(1 + 8 * length(triangle_ordered))) / 2) + 1)
-  }
+    # match masked matrix to mapping
+    n_nodes <- nrow(mapping)
+    n_categories <- length(unique(mapping$category))
+    pooling_opts <- c(FALSE, FALSE, TRUE, TRUE)
+    diag_opts <- c(FALSE, TRUE, FALSE, TRUE)
+    possible_lengths <- c(n_nodes * (n_nodes - 1) / 2, n_nodes * (n_nodes + 1) / 2, n_categories * (n_categories - 1) / 2, n_categories * (n_categories + 1) / 2)
 
-  # mirror the triangle across the x = y line to get full matrix
-  # first fill in half the matrix with the triangle data
-  mat <- matrix(0, nrow = nrow, ncol = nrow)
-  mat[upper.tri(mat, diag = ifelse(pooled, TRUE, FALSE))] <- triangle_ordered
-  full_mat <- mat + t(mat) #- diag(diag(triangle_ordered))
+    n_vars <- length(triangle_ordered)
 
-  # rearrange if necessary
-  if (rearrange) {
-    full_mat <- full_mat[mapping$oldroi, mapping$oldroi]
-  }
+    using_pooling <- pooling_opts[which(possible_lengths == n_vars)]
+    use_diag <- diag_opts[which(possible_lengths == n_vars)]
 
-  # melt the matrix for ggplot
-  melted <- melt(full_mat)
-  colnames(melted) <- c("Var1", "Var2", "value")
+    # get number of rows
+    if (using_pooling) {
+      n_rows <- n_categories
+      rearrange <- FALSE
+    } else {
+      n_rows <- n_nodes
+      rearrange <- TRUE
+    }
 
-  # determine the title of the plot based on the number of nodes
-  plot_title = ifelse((nrow == 268 & !pooled), "Studies with Shen 268 atlas", ifelse((nrow == 55 & !pooled), "Studies with UKB 55 nodes", ifelse((pooled & !ukb), "Studies with Shen 268 atlas (pooled)", "UKB pooled by Shen 268 node overlap")))
 
-  heatmap_plot <- ggplot(melted, aes(Var1, Var2, fill = value)) +
+    mat <- matrix(0, nrow = n_rows, ncol = n_rows)
+    mat[upper.tri(mat, diag = use_diag)] <- triangle_ordered
 
-    labs(fill = "Cohen's d",
-         title = plot_title,
-         x = "", y = "") +
+    # create full mat by adding transpose w diag removed
+    mat2 <- mat
+    mat2[lower.tri(mat2, diag = TRUE)] <- 0
+    full_mat <- mat + t(mat2)
 
-    geom_tile() +
-    scale_fill_gradient2(limits = c(min(melted$value), max(melted$value)),
-                         low = "blue", mid = "white", high = "red", midpoint = 0) +
-    theme_minimal() +
-    theme(axis.title.x = element_text(margin = margin(t = 10)),
-          axis.title.y = element_text(margin = margin(r = 10)),
-          axis.text.x = element_blank(),
-          axis.text.y = element_blank(),
-          axis.ticks.y = element_blank(),
-          axis.ticks.x = element_blank(),
-          panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank(),
-          plot.margin = margin(.5, .5, .5, .5, "lines"),
-          plot.title = element_text(size = 16, face = "bold", hjust = 0.5))
 
-  if (!is.na(mapping_path)) {
-    if (!pooled) {
+    # rearrange if necessary
+    if (rearrange) {
+      full_mat <- full_mat[mapping$oldroi, mapping$oldroi]
+    }
 
-      for (i in 1:(nrow(mapping) - 1)) {
-        if (mapping$category[i] != mapping$category[i + 1]) {
-          heatmap_plot <- heatmap_plot + geom_vline(xintercept = i + 0.5, color = "black", size = 0.3) +
-            geom_hline(yintercept = i+0.5, color = "black")
-        }
-      }
+    # melt the matrix for ggplot
+    melted <- melt(full_mat)
+    colnames(melted) <- c("Var1", "Var2", "value")
 
-      # Calculate the positions of the labels
+    # set the title of the plot based on the number of nodes, atlas, and pooling
+    plot_title <- paste0("Studies with ", tools::toTitleCase(basename(mapping_path)))
+    if (using_pooling) {
+      plot_title <- paste0(plot_title, " (pooled)")
+    }
+
+    # plot heatmap with title & theme
+
+    heatmap_plot <- ggplot(melted, aes(Var1, Var2, fill = value)) +
+      geom_tile() +
+      labs(fill = "Cohen's d",
+           title = plot_title,
+           x = "Network", y = "Network") +
+      # scale_fill_gradient2(limits = c(min(melted$value), max(melted$value)),
+      scale_fill_gradient2(limits = pp$zlim,
+                           low = "blue", mid = "white", high = "red", midpoint = 0) +
+      theme_minimal() +
+      theme(axis.title.x = element_text(margin = margin(t = 10)),
+            axis.title.y = element_text(margin = margin(r = 10)),
+            axis.text.x = element_blank(),
+            axis.text.y = element_blank(),
+            axis.ticks.y = element_blank(),
+            axis.ticks.x = element_blank(),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            plot.margin = margin(.5, .5, .5, .5, "lines"),
+            plot.title = element_text(size = 16, face = "bold", hjust = 0.5))
+
+    # add data, lines, and labels
+
+    # if (!is.na(mapping_path)) {
+    if (!using_pooling) {
+      # Get the boundary indices and label positions
+      boundaries <- which(mapping$category[c(1:length(mapping$category)-1)] != mapping$category[c(2:length(mapping$category))])
       label_positions <- c(1, which(mapping$category[-1] != mapping$category[-length(mapping$category)]) + 1, length(mapping$category) + 1)
       label_positions <- (label_positions[-1] + label_positions[-length(label_positions)]) / 2
       label_strings <- mapping$label[label_positions]
-
-      # Add labels to each mapping category
-      heatmap_plot <- heatmap_plot + annotate("text", x = label_positions, y = -6, label = label_strings, angle = 90, hjust = 1, vjust=0.5, size=3.5) + coord_cartesian(clip="off")
-      heatmap_plot <- heatmap_plot + annotate("text", x = -10, y = label_positions, label = label_strings, angle = 0, hjust = 0.5, vjust=1, size=3.5)
+      y_label_offset <- ifelse(n_rows > 100, -14, -2) # offsets proportional to matrix size
+      x_label_offset <- ifelse(n_rows > 100, -12, -2) # offsets proportional to matrix size
+      label_size <- 3.5
+    } else {
+      boundaries <- 2:n_rows-1
+      label_positions <- 1:n_rows
+      label_strings <- unique(mapping$label)
+      x_label_offset <- -0.1
+      y_label_offset <- x_label_offset
+      label_size <- 5
     }
 
-    if (pooled) {
-      # for pooled data, add black lines to separate every cell of the matrix
-      # label each row and column as the networks
-      for (i in 1:(nrow)) {
-        heatmap_plot <- heatmap_plot + geom_vline(xintercept = i+0.5, color = "black", size = 0.3) +
-          geom_hline(yintercept = i+0.5, color = "black")
+    # line_min_length = -1
+    # line_max_length = n_rows + 1
 
-        heatmap_plot <- heatmap_plot + annotate("text", x = i, y = -1, label = unique(mapping$label)[i], angle = 90, hjust = 1, vjust=0.5, size=3.5) + coord_cartesian(clip="off")
-        heatmap_plot <- heatmap_plot + annotate("text", x = -1, y = i, label = unique(mapping$label)[i], angle = 0, hjust = 0.5, vjust=1, size=3.5)
-      }
-    }
-  }
+    segments_df <- data.frame(
+      x = c(boundaries + 0.5, rep(0.5, length(boundaries))),
+      xend = c(boundaries + 0.5, rep(n_rows + 0.5, length(boundaries))),
+      y = c(rep(0.5, length(boundaries)), boundaries + 0.5),
+      yend = c(rep(n_rows + 0.5, length(boundaries)), boundaries + 0.5)
+    )
 
+    # Add labels to each mapping category
+    heatmap_plot <- heatmap_plot +
+      geom_segment(data = segments_df, aes(x = x, xend = xend, y = y, yend = yend), color = pp$boundary_color, size = pp$boundary_width, inherit.aes = FALSE) +
+      annotate("text", x = label_positions, y = x_label_offset, label = label_strings, angle = pp$label_angle, hjust = 1, vjust = 0.5, size = label_size) +
+      annotate("text", x = y_label_offset, y = label_positions, label = label_strings, angle = pp$label_angle, hjust = 0.5, vjust = 1, size = label_size) +
+      coord_fixed(clip = "off")
 
-  # Add axis labels to the heatmap
-  if (!is.na(mapping_path)) {
-    heatmap_plot <- heatmap_plot + labs(x = "Network", y = "Network")
-  } else if (is.na(mapping_path)) {
-    heatmap_plot <- heatmap_plot + labs(x = "UKB 55 Node", y = "UKB 55 Node")
+  } else {
+
+    warning("No mapping file provided. Skipping plot.")
+    heatmap_plot <- NA
+
   }
 
   return(heatmap_plot)
