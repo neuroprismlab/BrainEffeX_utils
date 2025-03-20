@@ -30,7 +30,8 @@ prep_data_for_plot <- function(data, study_details, combo_name, mv_combo_name, e
   }
 
 
-  # remove na
+if (!any(is.nan(data[[combo_name]][[estimate]]))) { # check if data exists
+
   na_idx <- is.na(data[[combo_name]][[estimate]]) | is.na(data[[combo_name]][[ci_lb]]) | is.na(data[[combo_name]][[ci_ub]])
   data[[combo_name]][[estimate]] <- data[[combo_name]][[estimate]][!na_idx]
   data[[combo_name]][[ci_lb]] <- data[[combo_name]][[ci_lb]][!na_idx]
@@ -182,5 +183,8 @@ prep_data_for_plot <- function(data, study_details, combo_name, mv_combo_name, e
 
   return(plot_data)
 
+} else {
+  return(NULL)
+}
 
 }
