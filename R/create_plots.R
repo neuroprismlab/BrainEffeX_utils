@@ -17,7 +17,7 @@
 #' @examples
 #' # Example usage
 #' # create_plots(pd)
-create_plots <- function(plot_data_list, plot_type = 'simci', add_description = FALSE) {
+create_plots <- function(plot_data_list, plot_type = 'simci', add_description = FALSE, summary_info = NULL) {
 
   library(ggplot2)
 
@@ -70,38 +70,7 @@ create_plots <- function(plot_data_list, plot_type = 'simci', add_description = 
 
   # Add extra info, if specified
 
-  if (add_description && (plot_type == 'simci' || plot_type == 'density') ) { # summary info only obtained during prep of simci/density
-
-    if ((length(plot_data_list) > 1) ) { # add details for overlapping plots
-
-      study_details__overlapping <- plot_data_list[[1]]$study_details
-      extra_study_details__overlapping <- plot_data_list[[1]]$extra_study_details
-
-      # get summary info across all studies in group
-      study_summary <- lapply(plot_data_list, function(x) {
-        list(
-          max_cons_estimate = x$extra_study_details$max_cons_estimate,
-          percent_not_zero = x$extra_study_details$percent_not_zero,
-          n_variables = length(x$data$cons_estimate),
-          cons_mv_estimate = x$extra_study_details$mv_ci[1]
-        )
-      })
-
-      study_summary <- do.call(rbind, lapply(study_summary, as.data.frame))
-
-      # take max of all max effects and average percent nonzeros
-      extra_study_details__overlapping$max_cons_effect <- study_summary$max_cons_estimate[which.max(abs(study_summary$max_cons_estimate))]
-      extra_study_details__overlapping$percent_not_zero <- sum(study_summary$percent_not_zero*study_summary$n_variables)/sum(study_summary$n_variables)
-      extra_study_details__overlapping$max_cons_mv_estimate <- max(study_summary$cons_mv_estimate)
-
-      p <- add_plot_description(p, pp, study_details__overlapping, extra_study_details__overlapping)
-
-    } else {
-
-      p <- add_plot_description(p, pp, plot_data_list[[1]]$study_details, plot_data_list[[1]]$extra_study_details)
-
-    }
-  }
+    p <- add_plot_description(p, pp, summary_info, add_description)
 
   return(p)
 }

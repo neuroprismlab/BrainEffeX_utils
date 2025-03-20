@@ -189,14 +189,17 @@ rm(plot_info__idx, plot_info__grouping_var, plot_info__group_level, plot_info__r
 
 ## Make Plots
 
-panel_list <- list()
+panel_list <- list() # list of panels
+log_list <- list() # list of logs
 
 for (i in 1:length(plot_info$idx)) { # loop over panels - this_study_or_group is the name of the group or study
 
   this_study_or_group <- rownames(plot_info)[i]
   this_plot_info <- plot_info[this_study_or_group,]
 
-  pd_list <- list()
+  pd_list <- list() # list of plot info for single panel
+  ld_list <- list() # list of log info for single panel
+
   n_studies_in_pd_list <- 1
 
   # 1. Prep
@@ -233,16 +236,29 @@ for (i in 1:length(plot_info$idx)) { # loop over panels - this_study_or_group is
       }
 
       pd_list[[n_studies_in_pd_list]] <- pd
+      ld_list[[n_studies_in_pd_list]] <- get_summary_info(pd$study_details, pd$extra_study_details)
+
       n_studies_in_pd_list <- n_studies_in_pd_list + 1
 
+      }
     }
   }
 
-  # 2. Plot
+
+  # 2. Plot & Log
 
   if (make_plots) {
     if (length(pd_list) > 0) { # plot only if pd_list isn't empty
-      panel_list[[i]] <- create_plots(pd_list, plot_type = plot_type, add_description = add_plt_description)
+
+      # set up plot
+      if (length(ld_list) > 1) {
+        log_list[[i]] <- combine_summary_info(ld_list)
+      } else {
+        log_list[[i]] <- ld_list[[1]]
+      }
+
+      panel_list[[i]] <- create_plots(pd_list, plot_type = plot_type, add_description = add_plt_description, log_list[[i]])
+
     }
   }
 
@@ -265,20 +281,18 @@ if (make_plots) {
 
   if (save_plots) { # TODO: let's use ggsave(fn) instead of this png(fn) and below dev.off()
 
-    # filename
-    # /odir/meta/net/density - motion-none.png
-    # out_dir <- ...
-    # fn <- paste0(this_study_or_group, '_', n_studies_in_pd_list, '.png')
-    # out_name = paste0(out_dir, '/', fn)
+    # set up dir and file names
 
-    if (grouping_var != 'none') {
-      grouping_var_str <- paste0(grouping_var, '-')
+    if (plot_combination_style == 'meta') {
+      plot_combination_style__fn <- paste0(plot_combination_style, '_', plot_type, '__', grouping_var)
+    } else if (plot_combination_style == 'overlapping') {
+      plot_combination_style__fn <- paste0(plot_type, '_', plot_combination_style, '__', grouping_var)
     } else {
-      grouping_var_str <- ''
+      plot_combination_style__fn <- paste0(plot_type)
     }
 
-    out_dir <- paste0(out_dir_basename, 'pooling-', pooling, '/', plot_combination_style, '/')
-    out_name <- paste0(out_dir, grouping_var_str, plot_type, ' - motion-', motion, '.png')
+    out_dir <- paste0(out_dir_basename, effect_size_type, '/motion_', motion, '/pooling_', pooling, '/')
+    out_name <- paste0(out_dir, plot_combination_style__fn, '.png')
 
     cat("Saving plots to...\n", out_name, "\n", sep = "")
 
@@ -287,6 +301,12 @@ if (make_plots) {
     }
 
     png(out_name, width = pp$width * pp$ncol, height = pp$height * pp$nrow, res = pp$res, units = pp$units) # TODO: this is tied to
+
+    if (save_logs) {
+      log_fn <- paste0(out_dir, plot_combination_style__fn, '.txt')
+      writeLines(unlist(lapply(log_list, function(x) c(x$title_text, x$bottom_text, ""))), log_fn)
+    }
+
   }
 
   # plot multiple panels

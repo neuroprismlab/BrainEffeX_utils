@@ -485,6 +485,96 @@ plot_full_mat <- function(triangle_ordered, pooled = FALSE, ukb = FALSE, mapping
 # Summary info
 
 
+#' Get summary info
+#'
+#' This function gets summary info to a ggplot object.
+#'
+#' @param p A ggplot object to which the labels will be added.
+#' @param study_details A list of original study details: orig_stat_type, test_component_1, test_component_2, dataset, map_type, group, and ref.
+#' @param extra_study_details A list containing extra descriptive info: percent_not_zero, max_cons_effect, group_by_title, n_title, mv_estimate, and mv_ci.
+#'
+#' @return A ggplot object with summary labels.
+#' @export
+#'
+#' @examples
+#' # Example usage
+#' # get_summary_info(pp, study_details, extra_study_details)
+get_summary_info <- function(study_details, extra_study_details) {
+
+  summary_info <- list()
+
+  summary_info$grouping_var_title <- switch(extra_study_details$grouping_var, # TODO: move w other pp but beware that singles may not have defined
+                                  "none" = "None",
+                                  "orig_stat_type" = "Statistic",
+                                  "category" = "Outcome Measure")
+
+  # set text
+
+  summary_info$bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_estimate, "\n",
+                        "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%")
+
+  if (extra_study_details$grouping_var == 'none') {
+
+    summary_info$title_text <- paste0("Dataset: ", study_details$dataset, "   |  ",
+                         "Test: ", study_details$orig_stat_type, ": ", study_details$test_component_1, ", ", study_details$test_component_2, "   |   ",
+                         "Sample Size: ", extra_study_details$n_title, "   |  ",
+                         "Map: ", study_details$map_type)
+
+    # if field cons_mv_estimate exists in extra_study_details_multi, add to bottom text
+    if ("mv_estimate" %in% names(extra_study_details)) {
+      summary_info$bottom_text <- paste0(summary_info$bottom_text,"\n",
+                            "Multivariate effect size: ", round(extra_study_details$mv_estimate, 2), " [", round(extra_study_details$mv_ci[1], 2), ", ", round(extra_study_details$mv_ci[2], 2), "]")
+      # bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
+      #                       "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%\n",
+      #                       "Multivariate effect size: ", round(extra_study_details$mv_estimate, 2), " [", round(extra_study_details$mv_ci[1], 2), ", ", round(extra_study_details$mv_ci[2], 2), "]")
+    }
+
+  } else {
+
+    summary_info$title_text <- paste0(summary_info$grouping_var_title, ": ", extra_study_details$group_level, "   |  ",
+                         "Reference Space: ", extra_study_details$ref)
+
+    # if field cons_mv_estimate exists in extra_study_details_multi, add to bottom text # TODO: currently not defined when using group_data
+    if ("max_cons_mv_estimate" %in% names(extra_study_details)) {
+      summary_info$bottom_text <- paste0(summary_info$bottom_text,"\n",
+                            "Max conservative multivariate effect size: ", round(extra_study_details$max_cons_mv_estimate, 2))
+      # bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
+      #                       "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%\n",
+      #                       "Max conservative multivariate effect size: ", round(extra_study_details$max_cons_mv_estimate, 2))
+    # } else {
+      # bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
+      #                       "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%")
+    }
+  }
+
+  return(summary_info)
+}
+
+#########################################################################
+# Combine summary info if multiple overlapping plots so there's one description per panel
+
+combine_summary_info <- function(summary_info) {
+
+  summary_info2 <- list()
+  summary_info2$title_text <- summary_info[[1]]$title_text
+  # append num studies
+  summary_info2$title_text <- paste0(summary_info2$title_text, " (", length(summary_info), " studies)")
+
+  # for summary_info2$bottom_text, get summary_info[:]$bottom_text strings for each study and parse max cons effect size, perce not overlapping zero, and multivar effect size. Take average
+  max_cons_effect__overlapping <- max(as.numeric(sapply(summary_info, function(x) as.numeric(sub(".*Max conservative effect size: ([^\n]+).*", "\\1", x$bottom_text)))))
+  percent_not_zero__overlapping <- mean(as.numeric(sapply(summary_info, function(x) as.numeric(sub(".*Percent not overlapping zero: ([^%]+).*", "\\1", x$bottom_text)))))
+  mv_estimate__overlapping <- mean(as.numeric(sapply(summary_info, function(x) as.numeric(sub(".*Max conservative multivariate effect size: ([^\n]+).*", "\\1", x$bottom_text)))))
+
+  summary_info2$bottom_text <- paste0("Max conservative effect size: ", round(max_cons_effect__overlapping, 2), "\n",
+                                      "Percent not overlapping zero: ", round(percent_not_zero__overlapping, 1), "%\n",
+                                      "Multivariate effect size: ", round(mv_estimate__overlapping, 2))
+
+  summary_info <- summary_info2
+
+}
+
+
+#########################################################################
 #' Add summary labels
 #'
 #' This function adds summary labels to a ggplot object.
@@ -498,8 +588,8 @@ plot_full_mat <- function(triangle_ordered, pooled = FALSE, ukb = FALSE, mapping
 #'
 #' @examples
 #' # Example usage
-#' # add_plot_description(p, study_details, extra_study_details)
-add_plot_description <- function(p, pp, study_details, extra_study_details) {
+#' # add_plot_description(p, pp, study_details, extra_study_details)
+add_plot_description <- function(p, pp, summary_info, add_extra_text) {
 
   # add description-specific plot params
   pp$title_size <- 21
@@ -508,60 +598,52 @@ add_plot_description <- function(p, pp, study_details, extra_study_details) {
   pp$title_lmargin <- -6 # adjust it a bit left of the plot y-axis
   pp$caption_hjust <- 0
 
-  pp$grouping_var_title <- switch(extra_study_details$grouping_var, # TODO: move w other pp but beware that singles may not have defined
-                                  "none" = "None",
-                                  "orig_stat_type" = "Statistic",
-                                  "category" = "Outcome Measure")
+  # if overlapping plots, make single summary_info
+  # study_details__overlapping <- plot_data_list[[1]]$study_details
+  #   extra_study_details__overlapping <- plot_data_list[[1]]$extra_study_details
+  #
+  #   # get summary info across all studies in group
+  #   study_summary <- lapply(plot_data_list, function(x) {
+  #     list(
+  #       max_cons_estimate = x$extra_study_details$max_cons_estimate,
+  #       percent_not_zero = x$extra_study_details$percent_not_zero,
+  #       n_variables = length(x$data$cons_estimate),
+  #       cons_mv_estimate = x$extra_study_details$mv_ci[1]
+  #     )
+  #   })
+  #
+  #   study_summary <- do.call(rbind, lapply(study_summary, as.data.frame))
+  #
+  #   # take max of all max effects and average percent nonzeros
+  #   extra_study_details__overlapping$max_cons_effect <- study_summary$max_cons_estimate[which.max(abs(study_summary$max_cons_estimate))]
+  #   extra_study_details__overlapping$percent_not_zero <- sum(study_summary$percent_not_zero*study_summary$n_variables)/sum(study_summary$n_variables)
+  #   extra_study_details__overlapping$max_cons_mv_estimate <- max(study_summary$cons_mv_estimate)
+  #
+  #   p <- add_plot_description(p, pp, study_details__overlapping, extra_study_details__overlapping)
+  #
 
-  # set text
 
-  bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
-                        "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%")
-
-  if (extra_study_details$grouping_var == 'none') {
-
-    title_text <- paste0("Dataset: ", study_details$dataset, "   |  ",
-                         "Test: ", study_details$orig_stat_type, ": ", study_details$test_component_1, ", ", study_details$test_component_2, "   |   ",
-                         "Sample Size: ", extra_study_details$n_title, "   |  ",
-                         "Map: ", study_details$map_type)
-
-    bottom_text <- paste0(bottom_text,"\n",
-                          "Multivariate effect size: ", round(extra_study_details$mv_estimate, 2), " [", round(extra_study_details$mv_ci[1], 2), ", ", round(extra_study_details$mv_ci[2], 2), "]")
-    # bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
-    #                       "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%\n",
-    #                       "Multivariate effect size: ", round(extra_study_details$mv_estimate, 2), " [", round(extra_study_details$mv_ci[1], 2), ", ", round(extra_study_details$mv_ci[2], 2), "]")
-
-  } else {
-
-    title_text <- paste0(pp$grouping_var_title, ": ", extra_study_details$group_level, "   |  ",
-                         "Reference Space: ", extra_study_details$ref)
-
-    # if field cons_mv_estimate exists in extra_study_details_multi, add to bottom text # TODO: currently not defined when using group_data
-    if ("max_cons_mv_estimate" %in% names(extra_study_details)) {
-      bottom_text <- paste0(bottom_text,"\n",
-                            "Max conservative multivariate effect size: ", round(extra_study_details$max_cons_mv_estimate, 2))
-      # bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
-      #                       "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%\n",
-      #                       "Max conservative multivariate effect size: ", round(extra_study_details$max_cons_mv_estimate, 2))
-    # } else {
-      # bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
-      #                       "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%")
-    }
-  }
-
-  if (pp$plot_detail_style == 'manuscript') { # for manuscript, remove labels from title
-    title_text <- gsub("(Dataset: )|  ([|])[^:]*:", "\\2", title_text)
-    title_text <- gsub("([|][^|]*$)", "", title_text)
+  # for manuscript, remove labels from title for cleaner look
+  if (pp$plot_detail_style == 'manuscript') {
+    summary_info$title_text <- gsub("(Dataset: )|  ([|])[^:]*:", "\\2", summary_info$title_text)
+    summary_info$title_text <- gsub("([|][^|]*$)", "", summary_info$title_text)
   }
 
   p <- p +
-    ggtitle(title_text) +
-    labs(caption = bottom_text) +
+    ggtitle(summary_info$title_text) +
     theme(plot.title = element_text(hjust = pp$title_hjust, margin = margin(l = pp$title_lmargin, unit = "pt"),
-          size = pp$title_size, face = "bold"),
-          plot.caption = element_text(hjust = pp$caption_hjust, size = pp$caption_size))
+                                    size = pp$title_size, face = "bold"),
+          plot.caption = element_text(hjust = pp$caption_hjust, size = pp$caption_size),
+          panel.background = element_blank(),
+          plot.background = element_blank()
+    )
+
+  if (add_extra_text) {
+    p <- p + labs(caption = summary_info$bottom_text)
+  }
 
   return(p)
+
 }
 
 
