@@ -67,6 +67,10 @@ plot_simci_panel <- function(pp, plot_data_list) {
     # } else {
     #   pp$ylim = pp$effect_size_limits_small
     # }
+      # TODO: hack for R^2
+    if ((max(plot_df$estimate) <= 1.1) && (min(plot_df$estimate) >= -0.1)) {
+      pp$ylim = c(-0.5, 1)
+    }
 
     # plot
       p <- add_geom_layers(p, subset(plot_df, x <= below_cross_idx), pp$non_overlap_colors, pp$alpha_line, pp$alpha_ribbon)
