@@ -136,7 +136,7 @@ if (plot_combination_style == 'single') {  # name by study
 
   # sort all rows of plot_info__idx by orig_stat_type, with studies sharing same stat type next to each other
   if (rearrange_by_stat_type) {
-    orig_stat_type_order <- order(v$study$orig_stat_type)
+    orig_stat_type_order <- c(which(v$study$orig_stat_type == 'r'), which(v$study$orig_stat_type == 't2'), which(v$study$orig_stat_type == 't'))
     plot_info__idx <- plot_info__idx[orig_stat_type_order]
     plot_info__grouping_var <- plot_info__grouping_var[orig_stat_type_order]
     plot_info__group_level <- plot_info__group_level[orig_stat_type_order]
@@ -213,7 +213,7 @@ for (i in 1:length(plot_info$idx)) { # loop over panels - this_study_or_group is
       # name <- names(v$data_group[j])
       data <- v[[meta_str]]$data[[j]]
       study_details <- list()
-      brain_masks <- v[[meta_str]]$brain_masks[[j]]
+      brain_masks <- v[[meta_str]]$brain_masks[[j]]$pooling.none.motion.none.mv.none # TODO: this is because we explicitly set this for meta but not for single studies - assuming motion type shouldn't affect the mask and always using an external mask for pooling
 
     } else {
 
@@ -221,10 +221,10 @@ for (i in 1:length(plot_info$idx)) { # loop over panels - this_study_or_group is
       data <- v$data[[j]]
       study_details <- v$study[j, ]
       brain_masks <- v$brain_masks[[j]]
-
     }
 
     if (combo_name %in% names(data)) { # if combo_name exists in data (e.g., not all studies have net)
+      if (any(!is.na(data[[combo_name]][[effect_size_type]])) > 0) {  # data is not just NA
 
       # prep
 
@@ -273,7 +273,7 @@ if (make_plots) {
   # Should at least set all panel / canvas dimensions here
   pp <- list()
   pp$width_per_panel <- 7
-  pp$height_per_panel <- 5
+  pp$height_per_panel <- 6
   pp$res <- 300
   pp$units <- "in"
   pp$ncol <- 1
