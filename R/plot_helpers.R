@@ -21,7 +21,7 @@
 #' @examples
 #' # Example usage
 #' # plot_simci_panel(plot_data)
-plot_simci_panel <- function(pp, plot_data_list) {
+plot_simci_panel <- function(pp, plot_data_list, meta = FALSE, estimate = 'd') {
 
   # add simci-specific plot params
   pp$non_overlap_colors <- rgb(177/255, 207/255, 192/255, alpha = 0.5)
@@ -48,7 +48,13 @@ plot_simci_panel <- function(pp, plot_data_list) {
     above_cross_idx <- plot_data_list[[i]]$data$above_cross_idx
 
     # set y limits
-    if (max(abs(c(plot_df$lb,plot_df$ub))) > pp$effect_size_thresh) {
+    if (meta) {
+      pp$ylim = pp$effect_size_limits_meta
+      pp$non_overlap_colors <- pp$overlap_colors
+      if (estimate == 'r_sq') {
+        pp$ylim = pp$r_sq_limits_meta
+      }
+    } else if (max(abs(c(plot_df$lb,plot_df$ub))) > pp$effect_size_thresh) {
       pp$ylim = pp$effect_size_limits_big
     } else {
       pp$ylim = pp$effect_size_limits_small
@@ -472,18 +478,18 @@ add_plot_description <- function(p, study_details, extra_study_details) {
   # add description-specific plot params
   pp <- list()
   pp$title_size <- 10
-  pp$caption_size <- 8
+  pp$caption_size <- 9
 
   pp$grouping_var_title <- switch(extra_study_details$grouping_var, # TODO: move w other pp but beware that singles may not have defined
                                   "none" = "None",
-                                  "orig_stat_type" = "Statistic",
+                                  "statistic" = "Statistic",
                                   "category" = "Outcome Measure")
 
 
   if (extra_study_details$grouping_var == 'none') {
 
     title_text <- paste0("Dataset: ", study_details$dataset, "    |    ",
-                         "Test: ", study_details$orig_stat_type, ": ", study_details$test_component_1, ", ", study_details$test_component_2, "    |    ",
+                         "Test: ", study_details$orig_stat_type, ": ", study_details$test_component_1, ", ", study_details$test_component_2, "\n",
                          "Map: ", study_details$map_type, "    |    ",
                          "Sample Size: ", extra_study_details$n_title)
 
