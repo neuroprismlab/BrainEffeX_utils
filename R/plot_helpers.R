@@ -50,7 +50,7 @@ plot_simci_panel <- function(pp, plot_data_list, meta = FALSE, estimate = 'd') {
     # set y limits
     if (meta) {
       pp$ylim = pp$effect_size_limits_meta
-      pp$non_overlap_colors <- pp$overlap_colors
+      #pp$non_overlap_colors <- pp$overlap_colors
       if (estimate == 'r_sq') {
         pp$ylim = pp$r_sq_limits_meta
       }
