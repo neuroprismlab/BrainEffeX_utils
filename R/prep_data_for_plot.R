@@ -117,6 +117,11 @@ if (!any(is.nan(data[[combo_name]][[estimate]]))) { # check if data exists
     above_cross_idx = length(above_zero)
   }
 
+  # TEMP: quick plot sorted estimate with sorted upper bounds and sorted lower bounds as confidence interval
+  # plot(1:length(sorted_estimate), sorted_estimate, type = "n", xlab = "Effect Size", ylab = "Confidence Interval", main = "Effect Size with Confidence Interval")
+  # lines(1:length(sorted_estimate), sorted_upper_bounds, col = "red")
+  # lines(1:length(sorted_estimate), sorted_lower_bounds, col = "blue")
+  # lines(1:length(sorted_estimate), rep(0, length(sorted_estimate)), col = "black")
 
   # calculate the percent of edges/voxels with confidence intervals that don't overlap with zero:
 
