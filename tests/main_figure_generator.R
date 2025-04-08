@@ -26,13 +26,13 @@ library(ggpubr) # requires svglite
 # meta
 # single r_sq
 
-all_effect_size_types <- c('d') # 'd' or 'r_sq' c('d', 'r_sq', 'd.full_res')
+all_effect_size_types <- c('d','r_sq') # 'd' or 'r_sq' c('d', 'r_sq', 'd.full_res')
 
 all_motion <- c('none', 'regression', 'threshold') #       # c('none', 'regression', 'threshold') # TODO: stat_control -> "...regression...$d", full_residualization -> "...regression...$d.full_res"
-all_pooling <- c('net') #  # c('none','net')
+all_pooling <- c('none', 'net') #  # c('none','net')
 
-all_plot_combination_styles <- c('single')   # c('single','meta')
-all_grouping_var <- c('none')          # c('none', 'category', 'orig_stat_type') # used only for meta & overlap plots - TODO: separate out?
+all_plot_combination_styles <- c('single','meta')   # c('single','meta')
+all_grouping_var <- c('category', 'orig_stat_type')          # c('none', 'category', 'orig_stat_type') # used only for meta & overlap plots - TODO: separate out?
 
 all_plot_types <- c('simci')      # c('simci')
 
