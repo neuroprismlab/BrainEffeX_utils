@@ -517,6 +517,138 @@ plot_full_mat <- function(pp, triangle_ordered, ukb = FALSE, mapping_path = NA) 
 
 
 #########################################################################
+# Plot power
+plot_power_panel <- function(pp, plot_data_list) {
+  
+  library(pwr)
+  
+  # add density-specific plot params
+  
+  # pp$xlim <- c(-0.15, 0.15)
+  pp$alpha <- 0.1
+  pp$size <- 0.4
+  pp$colors__sample_size <- data.frame(labels = c("<1,000", "1,000-5,000", "5,000-10,000", ">10,000", "NA"), colors = c("#82A651", "#3AB7BE", "#E7786C", "#B873F7","#B59410"), breaks_upper_lim = c(1000, 5000, 10000, 999999999, Inf))
+  pp$hist_bin_width <- 0.001 # when there are all 0's, we want a very thin hist instead of density
+  pp$xlabel <- "Effect Size"
+  pp$ylabel <- "Density"
+  
+  # for power calc:
+  pp$pwr_or_n <- "n" # TODO: temp - "power" or "n"
+  pp$alpha <- 0.05
+  pp$n_for_pwr <- 100
+  pp$power_threshold <- 0.8
+  pp$n_thresh <- 1000
+  # for plot
+  pp$y_big <- 200000 # TODO: need better solution
+  pp$width_jitter <- 0.8
+  
+  pp$thresholded_sizes <- c(1, 5)
+  pp$thresholded_colors <- c("red", "black")
+  
+  pp$xlim = pp$effect_size_limits_smaller # very small for meta
+  
+  # make plot object
+  
+  p <- ggplot()
+  
+  
+  for (i in seq_along(plot_data_list)) {
+    
+    # color plots by binned sample size
+    
+    if (plot_data_list[[i]]$extra_study_details$n_title == "n = ") {
+      plot_data_list[[i]]$extra_study_details$n_title <- "n = 9999999999" # hack to plot empty sample size in gold
+    }
+    
+    # TODO: use to color
+    sample_size_category <- cut(as.numeric(gsub("n = ", "", plot_data_list[[i]]$extra_study_details$n_title)),
+                                breaks = c(-Inf, pp$colors__sample_size$breaks_upper_lim),
+                                labels = pp$colors__sample_size$labels)
+    
+    # get power # TODO: two-sample only for testing
+    
+    # if (plot_data_list[[i]]$study_details$orig_stat_type == "t") {
+    # infer whether one sample or two sample
+    # if test component 2 is empty, it's one sample
+    # if (plot_data_list[[i]]$study_details$test_component_2 == "") {
+    #   this_type <- "one.sample"
+    # } else {
+    #     this_type <- "two.sample"
+    #   }
+    # } else {
+    this_type <- "two.sample"
+    warning("TESTING: assuming two-sample t-test for power calculation.")
+    # }
+    
+    y <- numeric(length(plot_data_list[[i]]$data$cons_estimate))
+    
+    for (j in seq_along(plot_data_list[[i]]$data$cons_estimate)) {
+      if (pp$pwr_or_n == "power") {
+        tmp <- pwr.t.test(d = plot_data_list[[i]]$data$cons_estimate[j], sig.level = pp$alpha, n = pp$n_for_pwr, type = this_type)
+        y[j] <- tmp$power
+      } else {
+        if (plot_data_list[[i]]$data$cons_estimate[j] > 0) { # only calculate power for positive estimates
+          tmp <- pwr.t.test(d = plot_data_list[[i]]$data$cons_estimate[j], sig.level = pp$alpha, power = pp$power_threshold, type = this_type)
+          y[j] <- tmp$n
+        } else {
+          y[j] <- pp$y_big # set to a large number # TODO
+        }
+      }
+    }
+    
+    if (pp$pwr_or_n == "power") {
+      this_thresh <- pp$power_threshold
+      thresholded_sizes <- rev(pp$thresholded_sizes)
+      thresholded_colors <- rev(pp$thresholded_colors)
+      ylim <- c(0, 1)
+    } else {
+      this_thresh <- pp$n_thresh
+      thresholded_sizes <- pp$thresholded_sizes
+      thresholded_colors <- pp$thresholded_colors
+      ylim <- c(0, max(y, na.rm = TRUE) + 1) # set to max y))
+    }
+    
+    # create the plot
+    
+    # create dataframe with y, sample_size_category, and binary of whether y > pp$power_threshold
+    df <- data.frame(y = y, sample_size_category = sample_size_category, thresh = y > this_thresh)
+    
+    p <- p +
+      geom_violin(data = df,
+                  aes(x = sample_size_category, y = y)) +
+      geom_jitter(data = df,
+                  aes(x = sample_size_category, y = y, color = thresh),
+                  height = 0, width = pp$width_jitter, size = ifelse(df$thresh, thresholded_sizes[1],thresholded_sizes[2]), alpha = 0.7) +  # Larger points for > threshold
+      scale_color_manual(values = c("FALSE" = thresholded_colors[1], "TRUE" = thresholded_colors[2])) +  # Colors for below/above threshold
+      geom_hline(yintercept = this_thresh, linetype = "dashed", color = "red") +  # Add a threshold line
+      labs(y = pp$pwr_or_n) + # rename y axis
+      theme_minimal() +
+      theme(axis.title.x = element_blank(),
+            axis.text.x = element_blank(),
+            legend.position = "none") +  # Hides the legend
+      coord_cartesian(ylim = ylim)  # Sets the y-axis limits to 0 and 1
+    
+    # pp$power_threshold <- 0.8
+    # p <- ggplot(data = data.frame(power = all_power, sample_size_category = sample_size_category),
+    #             aes(x = sample_size_category, y = power, fill = power > pp$power_threshold)) +
+    #   geom_violin(alpha = 0.5, color = "black") +  # Base violin plot
+    #   scale_fill_manual(values = c("FALSE" = "blue", "TRUE" = "red")) +  # Colors for below/above threshold
+    #   geom_hline(yintercept = pp$power_threshold, linetype = "dashed", color = "black") +  # Add a threshold line
+    #   theme_minimal() +
+    #   theme(axis.title.x = element_blank(),  # Remove x-axis title
+    #         axis.text.x = element_blank())   # Remove x-axis tick labels
+    
+    
+    # print(paste0(this_type, ": mean d = ", mean(plot_data_list[[i]]$data$cons_estimate), " | n (PER GROUP, power=0.8) = ", this_n, " | power (n=100) = ", this_power))
+    
+  }
+  
+  return(p)
+  
+}
+
+
+#########################################################################
 # Summary info
 
 

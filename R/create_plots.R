@@ -64,6 +64,10 @@ create_plots <- function(plot_data_list, plot_type = 'simci', add_description = 
       p <- plot_connectivity_panel(pp, plot_data_list)
     }
 
+  } else if (plot_type == 'power') {
+    
+    p <- plot_power_panel(pp, plot_data_list)
+  
   } else {
     error('Please specify simci, density, or spatial')
   }

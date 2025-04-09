@@ -28,7 +28,7 @@ all_motion <- c('regression')         # c('none', 'regression', 'threshold') # T
 all_pooling <- c('net')  # c('none','net')
 
 all_plot_combination_styles <- c('meta')   # c('single','overlapping','meta')
-all_plot_types <- c('spatial')      # c('density', 'simci', 'spatial')
+all_plot_types <- c('spatial')      # c('density', 'simci', 'spatial', 'power')
 all_grouping_var <- c('orig_stat_type')          # c('none', 'category', 'orig_stat_type') # used only for meta & overlap plots - TODO: separate out?
 
 make_plots <- TRUE
