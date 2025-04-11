@@ -31,10 +31,13 @@ create_plots <- function(plot_data_list, plot_type = 'simci', add_description = 
   pp$effect_size_limits_big <- c(-1.2, 1.2)
   pp$effect_size_limits_small <- c(-0.5, 0.5)
   pp$effect_size_limits_smaller <- c(-0.15, 0.15)
+  pp$rsq_effect_size_limits <- c(-0.25, 0.5)
+  pp$rsq_effect_size_limits_smaller <- c(-0.01, 0.05)
   pp$effect_size_thresh <- 0.5
-  pp$axis_text_size = element_text(size = 17)
+  pp$axis_title_size = element_text(size = 16)
+  pp$axis_text_size = element_text(size = 16)
 
-  pp$plot_detail_style <- 'manuscript' # c('manuscript', 'Shiny') # for add_description
+  pp$plot_detail_style <- 'Shiny' # c('manuscript', 'Shiny') # for add_description
 
   # General setup
 

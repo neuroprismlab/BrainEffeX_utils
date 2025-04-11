@@ -26,6 +26,7 @@ plot_simci_panel <- function(pp, plot_data_list) {
   # add simci-specific plot params
   pp$non_overlap_colors <- "#4ECDC4"
   pp$overlap_colors <- "#FF6F61"
+  pp$other_overlap_colors <- "#8B859E" 
   # pp$non_overlap_colors <- rgb(177/255, 207/255, 192/255, alpha = 0.5)
   # pp$overlap_colors <- rgb(237/255, 185/255, 185/255, alpha = 0.5)
   pp$alpha_ribbon <- 0.3
@@ -67,22 +68,28 @@ plot_simci_panel <- function(pp, plot_data_list) {
     # } else {
     #   pp$ylim = pp$effect_size_limits_small
     # }
-      # TODO: hack for R^2
-    if ((max(plot_df$estimate) <= 1.1) && (min(plot_df$estimate) >= -0.1)) {
-      pp$ylim = c(-0.5, 1)
+
+    # TODO: temporary hack for R^2 limits
+    if ((max(plot_df$estimate,na.rm = TRUE) <= 1.1) && (min(plot_df$estimate,na.rm = TRUE) >= -0.1)) {
+      pp$ylim = pp$rsq_effect_size_limits
     }
 
     # plot
-      p <- add_geom_layers(p, subset(plot_df, x <= below_cross_idx), pp$non_overlap_colors, pp$alpha_line, pp$alpha_ribbon)
-      p <- add_geom_layers(p, subset(plot_df, x >= below_cross_idx & x <= above_cross_idx), pp$overlap_colors, pp$alpha_line, pp$alpha_ribbon)
-      p <- add_geom_layers(p, subset(plot_df, x >= above_cross_idx), pp$non_overlap_colors, pp$alpha_line, pp$alpha_ribbon)
 
+      if ((length(below_cross_idx) > 1) || (length(above_cross_idx) > 1)) {
+        # IN PROGRESS: plot everything below below_cross_idx[[1]] in grey
+        p <- add_geom_layers(p, plot_df, pp$other_overlap_colors, pp$alpha_line, pp$alpha_ribbon)
+      } else {
+        p <- add_geom_layers(p, subset(plot_df, x <= below_cross_idx), pp$non_overlap_colors, pp$alpha_line, pp$alpha_ribbon)
+        p <- add_geom_layers(p, subset(plot_df, x >= below_cross_idx & x <= above_cross_idx), pp$overlap_colors, pp$alpha_line, pp$alpha_ribbon)
+        p <- add_geom_layers(p, subset(plot_df, x >= above_cross_idx), pp$non_overlap_colors, pp$alpha_line, pp$alpha_ribbon)
+      }
   }
 
   p <- p + labs(x = pp$xlabel, y = pp$ylabel) +
     scale_y_continuous(limits = pp$ylim) +
     theme_classic() +
-    theme(axis.line.x = element_blank(), axis.ticks.x = element_blank(), axis.text.x = element_blank(), axis.text.y = pp$axis_text_size)
+    theme(axis.line.x = element_blank(), axis.ticks.x = element_blank(), axis.text.x = element_blank(), axis.text.y = pp$axis_text_size, axis.title = pp$axis_title_size)
 
   return(p)
 }
@@ -129,6 +136,11 @@ plot_density_panel <- function(pp, plot_data_list) {
       # pp$xlim = pp$effect_size_limits_big # big for individual studies
   #   }
   # }
+      
+  # TODO: temporary hack for R^2 limits
+  if ((max(plot_data_list[[1]]$data$estimate,na.rm = TRUE) <= 1.1) && (min(plot_data_list[[1]]$data$estimate,na.rm = TRUE) >= -0.1)) {
+    pp$xlim = pp$rsq_effect_size_limits
+  }
 
   for (i in seq_along(plot_data_list)) {
 
@@ -161,7 +173,7 @@ plot_density_panel <- function(pp, plot_data_list) {
 
   p <- p + theme_minimal() + labs(x = pp$xlabel, y = pp$ylabel) +
     xlim(pp$xlim) +
-    theme(legend.position = "none", axis.text.y = pp$axis_text_size, axis.text.x = pp$axis_text_size) +
+    theme(legend.position = "none", axis.text.y = pp$axis_text_size, axis.text.x = pp$axis_text_size, axis.title = pp$axis_title_size) +
     scale_fill_manual(values = pp$colors__sample_size$colors, breaks = pp$colors__sample_size$labels) +
     scale_color_manual(values = pp$colors__sample_size$colors, breaks = pp$colors__sample_size$labels)
 
@@ -206,11 +218,13 @@ plot_activation_panel <- function(pp, plot_data_list) {
   pp$ylabel <- "Spatial Map"
   pp$bg <- 'white'
   pp$text_color <- 'black'
-  pp$ncol <- 40 # also controls number of ticks on colorbar
-  pp$col_y <- colorspace::diverge_hsv(pp$ncol)
+  pp$text_size <- 10
+  pp$ncolors <- 40 # also controls number of ticks on colorbar
+  # pp$col_y <- colorspace::diverge_hsv(pp$ncol)
   # pp$n_colorbar_ticks <- 5
   pp$ycolorbar <- TRUE
-  pp$mfrow <- c(3, 1)
+  pp$colorbar_text_size <- 0.9
+  pp$mfrow <- c(1,3) #c(3, 1)
   pp$xCoord <- 30
   pp$yCoord <- 30
   pp$zCoord <- 30
@@ -238,6 +252,11 @@ plot_activation_panel <- function(pp, plot_data_list) {
         pp$zlim_range <- pp$effect_size_limits_small
       }
       pp$zlim_range <- pp$zlim_range/2
+      
+      # TODO: temporary hack for R^2 limits
+      if ((max(data,na.rm = TRUE) <= 1.1) && (min(data,na.rm = TRUE) >= -0.1)) {
+        pp$zlim_range = pp$rsq_effect_size_limits_smaller
+      }
 
       nii[nii == 0] <- NA
       nii[nii > pp$zlim_range[2]] <- pp$zlim_range[2]
@@ -251,23 +270,49 @@ plot_activation_panel <- function(pp, plot_data_list) {
       if (pp$do_static_figs) {
         png("ortho_tmp.png", width = 800, height = 800)
       }
-
+      
+      # hallee's
+      # pp$zlim_range <- c(-1,1)
+      # num_breaks = 20
+      
+      n_breaks <- pp$ncolors
+      ybreaks <- seq(pp$zlim_range[1], pp$zlim_range[2], length.out = n_breaks)
+      col_y <- colorspace::diverge_hsv(n_breaks-1) # previously pp$col_y
+      
+      
       ortho2(
         x = nii,
         y = nii,
-        crosshairs = TRUE,
+        crosshairs = FALSE,
         NA.x = TRUE,
-        col.y = pp$col_y,
+        col.y = col_y,
         xyz = c(pp$xCoord, pp$yCoord, pp$zCoord),
         bg = pp$bg,
         text.color = pp$text_color,
-        #clabels = seq(-0.1, 0.1, length.out = 30),
-        ybreaks = seq(pp$zlim_range[1], pp$zlim_range[2], length.out = pp$ncol+1),
-        clabels = round(seq(pp$zlim_range[1], pp$zlim_range[2], length.out = pp$ncol), 2),
+        text.cex = pp$text_size,
+        # clabels = clabels,
+        ybreaks = ybreaks,
         ycolorbar = pp$ycolorbar,
         mfrow = pp$mfrow
         # zlim = pp$zlim_range
       )
+      
+      n_breaks <- 10 # hallee's
+      # n_breaks <- pp$ncol # orig
+      ybreaks <- seq(pp$zlim_range[1], pp$zlim_range[2], length.out = n_breaks)
+      clabels <- round(seq(pp$zlim_range[1], pp$zlim_range[2], length.out = n_breaks-1), 2)
+      col_y <- colorspace::diverge_hsv(n_breaks-1) # previously pp$col_y
+      
+      colorbar_custom(
+        breaks = ybreaks,
+        col = col_y,
+        labels = clabels,
+        text.col = 'black',
+        text.size = pp$colorbar_text_size
+      )
+      
+      
+      
       if (pp$do_static_figs) {
         dev.off()
       }
@@ -311,6 +356,56 @@ create_nifti <- function(nifti_template, data, mask) {
   return(nifti_template)
 }
 
+
+# custom colorbar function (bc bug in coloring and size of ortho2)
+# mostly copied from https://github.com/muschellij2/neurobase/blob/master/R/ortho2.R
+# changed text color and added text.size
+
+colorbar_custom <- function(breaks, #the minimum and maximum z values for which 
+                            # colors should be plotted (see \code{\link{image}})
+                            col, # a list of colors (see \code{\link{image}})
+                            text.col = "white", # axis and text label color
+                            labels = TRUE,
+                            maxleft = 0.95,
+                            text.size = 4
+){
+  # taken from vertical.image.legend from package aqfig
+  starting.par.settings <- par(no.readonly = TRUE)
+  on.exit({
+    par(starting.par.settings)
+  })
+  mai <- par("mai")
+  fin <- par("fin")
+  rat = mai[4]/fin[1]
+  rat = max(rat, 1 - maxleft)
+  x.legend.fig <- c(1 - rat, 1)
+  y.legend.fig <- c(mai[1]/fin[2], 1 - (mai[3]/fin[2]))
+  x.legend.plt <- c(x.legend.fig[1] + (0.08 * (x.legend.fig[2] - 
+                                                 x.legend.fig[1])), 
+                    x.legend.fig[2] - (0.6 * (x.legend.fig[2] - 
+                                                x.legend.fig[1])))
+  y.legend.plt <- y.legend.fig
+  cut.pts <- breaks
+  z <- (cut.pts[1:length(col)] + cut.pts[2:(length(col) + 1)])/2
+  par(new = TRUE, pty = "m", plt = c(x.legend.plt, y.legend.plt))
+  image(x = 1, y = z, z = matrix(z, nrow = 1, ncol = length(col)), 
+        col = col, xlab = "", ylab = "", xaxt = "n", yaxt = "n")
+  if (isTRUE(labels)) {
+    at = NULL
+  } else {
+    at = z
+  }
+  axis(4, mgp = c(3, 0.2, 0), las = 2, cex.axis = text.size, 
+       tcl = -0.1, 
+       labels = labels,
+       at = at,
+       col.axis = text.col,
+       col = text.col)
+  box()
+  mfg.settings <- par()$mfg
+  par(mfg = mfg.settings, new = FALSE)
+  invisible(NULL)
+}
 
 #########################################################################
 # Functional Connectivity
@@ -385,10 +480,20 @@ plot_full_mat <- function(pp, triangle_ordered, ukb = FALSE, mapping_path = NA) 
 
     # Set extra plot params
 
-    pp$zlim <- pp$effect_size_limits_small/2
     pp$label_angle <- 45
     pp$boundary_color <- "black"
     pp$boundary_width <- 0.4
+    pp$tick_label_size <- 6 #5
+    pp$tick_label_size_small <- 4 #3.5
+    
+    
+    pp$zlim <- pp$effect_size_limits_small/2
+    pp$effect_size_measure <- 'd'
+    # TODO: temporary hack for R^2 limits
+    if ((max(triangle_ordered,na.rm = TRUE) <= 1.1) && (min(triangle_ordered,na.rm = TRUE) >= -0.1)) {
+      pp$zlim <- pp$rsq_effect_size_limits_smaller
+      pp$effect_size_measure <- 'R^2'
+    }
 
     # Structure data into full mat
 
@@ -447,7 +552,7 @@ plot_full_mat <- function(pp, triangle_ordered, ukb = FALSE, mapping_path = NA) 
 
     heatmap_plot <- ggplot(melted, aes(Var1, Var2, fill = value)) +
       geom_tile() +
-      labs(fill = "Cohen's d",
+      labs(fill = paste0("Effect Size (", pp$effect_size_measure, ")"),
            title = plot_title,
            x = "Network", y = "Network") +
       # scale_fill_gradient2(limits = c(min(melted$value), max(melted$value)),
@@ -460,6 +565,7 @@ plot_full_mat <- function(pp, triangle_ordered, ukb = FALSE, mapping_path = NA) 
             axis.text.y = element_blank(),
             axis.ticks.y = element_blank(),
             axis.ticks.x = element_blank(),
+            axis.title = pp$axis_title_size,
             panel.grid.major = element_blank(),
             panel.grid.minor = element_blank(),
             plot.margin = margin(.5, .5, .5, .5, "lines"),
@@ -476,14 +582,14 @@ plot_full_mat <- function(pp, triangle_ordered, ukb = FALSE, mapping_path = NA) 
       label_strings <- mapping$label[label_positions]
       y_label_offset <- ifelse(n_rows > 100, -14, -2) # offsets proportional to matrix size
       x_label_offset <- ifelse(n_rows > 100, -12, -2) # offsets proportional to matrix size
-      label_size <- 3.5
+      label_size <- pp$tick_label_size_small
     } else {
       boundaries <- 2:n_rows-1
       label_positions <- 1:n_rows
       label_strings <- unique(mapping$label)
       x_label_offset <- -0.1
       y_label_offset <- x_label_offset
-      label_size <- 5
+      label_size <- pp$tick_label_size
     }
 
     # line_min_length = -1
@@ -760,7 +866,7 @@ add_plot_description <- function(p, pp, summary_info, add_extra_text) {
 
   # add description-specific plot params
   pp$title_size <- 21
-  pp$caption_size <- 10
+  pp$caption_size <- 15
   pp$title_hjust <- 0.5
   pp$title_lmargin <- -6 # adjust it a bit left of the plot y-axis
   pp$caption_hjust <- 0
