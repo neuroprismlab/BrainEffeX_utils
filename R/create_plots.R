@@ -10,6 +10,7 @@
 #'    - `study_details`: A list of original study details: orig_stat_type, test_component_1, test_component_2, dataset, map_type, group, and ref
 #' @param plot_type String; which plot type to make. Options are 'density' or 'simci'. Default is "simci".
 #' @param add_description Logical; whether to add a description to the plot. Default is `FALSE`.
+#' @param do_minimal_title Logical; whether to shorten title. Default is `FALSE`.
 #'
 #' @return A plot visualizing effect sizes and simulated CIs.
 #' @export
@@ -17,8 +18,8 @@
 #' @examples
 #' # Example usage
 #' # create_plots(pd)
-create_plots <- function(plot_data_list, plot_type = 'simci', add_description = FALSE, summary_info = NULL) {
-
+create_plots <- function(plot_data_list, plot_type = 'simci', add_description = FALSE, do_minimal_title = FALSE, summary_info = NULL) {
+  
   library(ggplot2)
 
   # General plot parameters
@@ -77,7 +78,7 @@ create_plots <- function(plot_data_list, plot_type = 'simci', add_description = 
 
   # Add extra info, if specified
 
-    p <- add_plot_description(p, pp, summary_info, add_description)
+  p <- add_plot_description(p, pp, summary_info, add_description, do_minimal_title)
 
   return(p)
 }

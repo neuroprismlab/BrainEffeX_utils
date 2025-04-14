@@ -862,7 +862,7 @@ combine_summary_info <- function(summary_info) {
 #' @examples
 #' # Example usage
 #' # add_plot_description(p, pp, study_details, extra_study_details)
-add_plot_description <- function(p, pp, summary_info, add_extra_text) {
+add_plot_description <- function(p, pp, summary_info, add_extra_text, do_minimal_title) {
 
   # add description-specific plot params
   pp$title_size <- 21
@@ -897,7 +897,7 @@ add_plot_description <- function(p, pp, summary_info, add_extra_text) {
 
 
   # for manuscript, remove labels from title for cleaner look
-  if (pp$plot_detail_style == 'manuscript') {
+  if (do_minimal_title) {
     summary_info$title_text <- gsub("(Dataset: )|  ([|])[^:]*:", "\\2", summary_info$title_text)
     summary_info$title_text <- gsub("([|][^|]*$)", "", summary_info$title_text)
   }

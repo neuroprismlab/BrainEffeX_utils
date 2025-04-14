@@ -60,12 +60,14 @@ if (plot_output_style == 'shiny') {
     save_logs <- FALSE
   # }
     add_plt_description <- TRUE # text at bottom of screen
+    use_minimal_title <- FALSE
   
 } else if (plot_output_style == 'manuscript') {
   all_plot_types <- all_manuscript_plot_types
   all_plot_combination_styles <- all_plot_combination_styles
   save_logs = TRUE
   add_plt_description <- FALSE # text at bottom of screen
+  use_minimal_title <- TRUE # cleaner title for manuscript
 }
 
 # input and output directories
@@ -312,12 +314,12 @@ for (i in 1:length(plot_info$idx)) { # loop over panels - this_study_or_group is
 
       if (plot_type == 'simci-spatial') {
         
-        panel_list[[i]] <- create_plots(pd_list, plot_type = 'simci', add_description = add_plt_description, log_list[[i]])
-        panel_list_2[[i]] <- create_plots(pd_list_2, plot_type = 'spatial', add_description = add_plt_description, log_list[[i]])
+        panel_list[[i]] <- create_plots(pd_list, plot_type = 'simci', add_description = add_plt_description, do_minimal_title = use_minimal_title, log_list[[i]])
+        panel_list_2[[i]] <- create_plots(pd_list_2, plot_type = 'spatial', add_description = add_plt_description, do_minimal_title = use_minimal_title, log_list[[i]])
       
       } else {
         
-        panel_list[[i]] <- create_plots(pd_list, plot_type = plot_type, add_description = add_plt_description, log_list[[i]])
+        panel_list[[i]] <- create_plots(pd_list, plot_type = plot_type, add_description = add_plt_description, do_minimal_title = use_minimal_title, log_list[[i]])
       
       }
       
