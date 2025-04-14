@@ -31,7 +31,7 @@ load_all(utils_package_local)
 
 # plot params - USER-DEFINED
 
-plot_output_style <- c('shiny') # c('shiny', 'manuscript') # 'shiny': save plots for one study at a time, simci-spatial type, add descrip; 'manuscript': save plots concatenated across all studies, add descrip
+plot_output_style <- c('manuscript') # c('shiny', 'manuscript') # 'shiny': save plots for one study at a time, simci-spatial type, add descrip; 'manuscript': save plots concatenated across all studies, add descrip
 
 all_effect_size_types <- c('d','r_sq')              # c('d', 'r_sq', 'd.full_res')
 
@@ -71,18 +71,18 @@ if (plot_output_style == 'shiny') {
 # input and output directories
 
 data_dir <- "/Users/stephanienoble/Library/CloudStorage/GoogleDrive-s.noble@northeastern.edu/My Drive/Lab/xMore/Software/scripts/R/myscripts/effect_size/BrainEffeX/data/"
-out_dir_basename <- "/Users/stephanienoble/Library/CloudStorage/GoogleDrive-s.noble@northeastern.edu/My Drive/Lab/Tasks-Ongoing/K99/Effect_Size/manuscript/figures/plots/"
+out_basename_basename <- "/Users/stephanienoble/Library/CloudStorage/GoogleDrive-s.noble@northeastern.edu/My Drive/Lab/Tasks-Ongoing/K99/Effect_Size/manuscript/figures/plots/"
 
 
 
 ## Loop over plot types and styles
 
-for (plot_combination_style in all_plot_combination_styles) {
-for (plot_type in all_plot_types) {
 for (pooling in all_pooling) {
 for (motion in all_motion) {
 for (grouping_var in all_grouping_var) {
 for (effect_size_type in all_effect_size_types) {
+for (plot_combination_style in all_plot_combination_styles) {
+for (plot_type in all_plot_types) {
 
 print(paste0('Doing plot_combination_style: ', plot_combination_style, ' | plot_type: ', plot_type, ' | pooling: ', pooling, ' | motion: ', motion, ' | grouping_var: ', grouping_var))
 
@@ -347,6 +347,11 @@ if (make_plots) {
     pp$ncol <- 1
     pp$nrow <- length(panel_list)
   }
+  if (plot_output_style == 'manuscript') {
+    do_minimal_title <- TRUE
+  } else {
+    do_minimal_title <- FALSE
+  }
   
   # prep: set up dir and file names
   
@@ -357,15 +362,21 @@ if (make_plots) {
       grouping_var_str <- ''
     }
     
-    out_dir <- paste0(out_dir_basename, plot_output_style, '/', effect_size_type, '/motion_', motion, '/pooling_', pooling, '/', plot_combination_style, grouping_var_str)
-    if (plot_type == 'simci-spatial') { # use out_dir as dir, otherwise use as basename for concat plots
-      out_dir <- paste0(out_dir,'/')
+    if (plot_output_style == 'manuscript') {
+      grouping_var_str <- paste0('_', plot_type)
+    } else { 
+      grouping_var_str <- paste0('_', plot_type, '_', effect_size_type)
     }
-    actual_dir <- sub("/[^/]*$", "", out_dir)
+    
+    out_basename <- paste0(out_basename_basename, plot_output_style, '/', effect_size_type, '/motion_', motion, '/pooling_', pooling, '/', plot_combination_style, grouping_var_str)
+    if (plot_type == 'simci-spatial') { # use out_basename as dir, otherwise use as basename for concat plots
+      out_basename <- paste0(out_basename,'/')
+    }
+    actual_dir <- sub("/[^/]*$", "", out_basename)
     if (!dir.exists(actual_dir)) {
       dir.create(actual_dir, recursive = TRUE)
     }
-    cat("Saving plots to...\n", out_dir, "\n", sep = "")
+    cat("Saving plots to...\n", out_basename, "\n", sep = "")
   }
   
 
@@ -388,11 +399,11 @@ if (make_plots) {
         
         study_name <- names(plot_info$idx)[[i]]
         
-        plot_fn <- paste0(out_dir, study_name, '.png')
+        plot_fn <- paste0(out_basename, study_name, '.png')
         ggsave(plot_fn, plot = multi_plot, width = pp$width_per_panel * pp$ncol, height = pp$height_per_panel * pp$nrow, units = pp$units, dpi = pp$res, bg = "white", device = "png")
         
-        if (save_logs) {
-          log_fn <- paste0(out_dir, study_name,'.txt')
+        if (save_logs) { # TODO: some logs are identical - see about saving only single
+          log_fn <- paste0(out_basename, study_name,'.txt')
           writeLines(unlist(lapply(log_list, function(x) c(x$title_text, x$bottom_text, ""))), log_fn)
         }
         
@@ -406,11 +417,11 @@ if (make_plots) {
     
     if (save_plots) {
       
-      plot_fn <- paste0(out_dir, '.png')
+      plot_fn <- paste0(out_basename, '.png')
       ggsave(plot_fn, plot = multi_plot, width = pp$width_per_panel * pp$ncol, height = pp$height_per_panel * pp$nrow, units = pp$units, dpi = pp$res, bg = "white", device = "png", limitsize = FALSE)
       
-      if (save_logs) {
-        log_fn <- paste0(out_dir, '.txt')
+      if (save_logs) { # TODO: some logs are identical - see about saving only single
+        log_fn <- paste0(out_basename, '.txt')
         writeLines(unlist(lapply(log_list, function(x) c(x$title_text, x$bottom_text, ""))), log_fn)
       }
       
