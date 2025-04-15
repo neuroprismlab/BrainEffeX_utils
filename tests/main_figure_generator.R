@@ -345,6 +345,9 @@ if (make_plots) {
   if (plot_type == 'simci-spatial') {
     pp$ncol <- 2
     pp$nrow <- 1
+  } else if (plot_type == 'power') {
+    pp$ncol <- length(panel_list)
+    pp$nrow <- 1
   } else {
     pp$ncol <- 1
     pp$nrow <- length(panel_list)
