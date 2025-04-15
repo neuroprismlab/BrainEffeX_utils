@@ -70,9 +70,9 @@ plot_simci_panel <- function(pp, plot_data_list) {
     # }
 
     # TODO: temporary hack for R^2 limits
-    if ((max(plot_df$estimate,na.rm = TRUE) <= 1.1) && (min(plot_df$estimate,na.rm = TRUE) >= -0.1)) {
-      pp$ylim = pp$rsq_effect_size_limits
-    }
+    # if ((max(plot_df$estimate,na.rm = TRUE) <= 1.1) && (min(plot_df$estimate,na.rm = TRUE) >= -0.1)) {
+    #   pp$ylim = pp$rsq_effect_size_limits
+    # }
 
     # plot
 
@@ -138,9 +138,9 @@ plot_density_panel <- function(pp, plot_data_list) {
   # }
       
   # TODO: temporary hack for R^2 limits
-  if ((max(plot_data_list[[1]]$data$estimate,na.rm = TRUE) <= 1.1) && (min(plot_data_list[[1]]$data$estimate,na.rm = TRUE) >= -0.1)) {
-    pp$xlim = pp$rsq_effect_size_limits
-  }
+  # if ((max(plot_data_list[[1]]$data$estimate,na.rm = TRUE) <= 1.1) && (min(plot_data_list[[1]]$data$estimate,na.rm = TRUE) >= -0.1)) {
+  #   pp$xlim = pp$rsq_effect_size_limits
+  # }
 
   for (i in seq_along(plot_data_list)) {
 
@@ -254,9 +254,9 @@ plot_activation_panel <- function(pp, plot_data_list) {
       pp$zlim_range <- pp$zlim_range/2
       
       # TODO: temporary hack for R^2 limits
-      if ((max(data,na.rm = TRUE) <= 1.1) && (min(data,na.rm = TRUE) >= -0.1)) {
-        pp$zlim_range = pp$rsq_effect_size_limits_smaller
-      }
+      # if ((max(data,na.rm = TRUE) <= 1.1) && (min(data,na.rm = TRUE) >= -0.1)) {
+      #   pp$zlim_range = pp$rsq_effect_size_limits_smaller
+      # }
 
       nii[nii == 0] <- NA
       nii[nii > pp$zlim_range[2]] <- pp$zlim_range[2]
@@ -488,12 +488,10 @@ plot_full_mat <- function(pp, triangle_ordered, ukb = FALSE, mapping_path = NA) 
     
     
     pp$zlim <- pp$effect_size_limits_small/2
-    pp$effect_size_measure <- 'd'
     # TODO: temporary hack for R^2 limits
-    if ((max(triangle_ordered,na.rm = TRUE) <= 1.1) && (min(triangle_ordered,na.rm = TRUE) >= -0.1)) {
-      pp$zlim <- pp$rsq_effect_size_limits_smaller
-      pp$effect_size_measure <- 'R^2'
-    }
+    # if ((max(triangle_ordered,na.rm = TRUE) <= 1.1) && (min(triangle_ordered,na.rm = TRUE) >= -0.1)) {
+    #   pp$zlim <- pp$rsq_effect_size_limits_smaller
+    # }
 
     # Structure data into full mat
 
@@ -641,12 +639,12 @@ plot_power_panel <- function(pp, plot_data_list) {
   # for power calc:
   pp$pwr_or_n <- "n" # TODO: temp - "power" or "n"
   pp$alpha <- 0.05
-  pp$n_for_pwr <- 100
+  pp$n_for_pwr <- 1000
   pp$power_threshold <- 0.8
   pp$n_thresh <- 1000
   # for plot
   pp$y_big <- 200000 # TODO: need better solution
-  pp$width_jitter <- 0.8
+  pp$width_jitter <- 0.6
   
   pp$thresholded_sizes <- c(1, 5)
   pp$thresholded_colors <- c("red", "black")
@@ -696,7 +694,7 @@ plot_power_panel <- function(pp, plot_data_list) {
         if (plot_data_list[[i]]$data$cons_estimate[j] > 0) { # only calculate power for positive estimates
           tmp <- pwr.t.test(d = plot_data_list[[i]]$data$cons_estimate[j], sig.level = pp$alpha, power = pp$power_threshold, type = this_type)
           y[j] <- tmp$n
-        } else {
+        } else if (plot_data_list[[i]]$data$cons_estimate[j] == 0) {
           y[j] <- pp$y_big # set to a large number # TODO
         }
       }

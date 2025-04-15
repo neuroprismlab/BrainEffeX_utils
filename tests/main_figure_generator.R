@@ -314,12 +314,12 @@ for (i in 1:length(plot_info$idx)) { # loop over panels - this_study_or_group is
 
       if (plot_type == 'simci-spatial') {
         
-        panel_list[[i]] <- create_plots(pd_list, plot_type = 'simci', add_description = add_plt_description, do_minimal_title = use_minimal_title, log_list[[i]])
-        panel_list_2[[i]] <- create_plots(pd_list_2, plot_type = 'spatial', add_description = add_plt_description, do_minimal_title = use_minimal_title, log_list[[i]])
+        panel_list[[i]] <- create_plots(pd_list, plot_type = 'simci', effect_type = effect_size_type, add_description = add_plt_description, do_minimal_title = use_minimal_title, log_list[[i]])
+        panel_list_2[[i]] <- create_plots(pd_list_2, plot_type = 'spatial', effect_type = effect_size_type, add_description = add_plt_description, do_minimal_title = use_minimal_title, log_list[[i]])
       
       } else {
         
-        panel_list[[i]] <- create_plots(pd_list, plot_type = plot_type, add_description = add_plt_description, do_minimal_title = use_minimal_title, log_list[[i]])
+        panel_list[[i]] <- create_plots(pd_list, plot_type = plot_type, effect_type = effect_size_type, add_description = add_plt_description, do_minimal_title = use_minimal_title, log_list[[i]])
       
       }
       
