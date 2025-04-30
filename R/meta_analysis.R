@@ -16,7 +16,7 @@
 #' # meta_analysis(v,v$brain_masks, "pooling.none.motion.none.mv.none")
 meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category") {
 
-  testing <- TRUE
+  testing <- FALSE
 
   # libraries & functions
 
@@ -158,7 +158,6 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
           r_sq_se__group <- r_sq_se(r_sq__group, n = this_n_total)
 
           print("- single")
-
 
         } else { # META-ANALYSIS:
 

@@ -13,11 +13,12 @@ library(devtools) # for installing/loading utils
 ## Load utils
 
 # Option 1. simple add local scripts to path (for dev):
-utils_package_local <- "/Users/stephanienoble/Library/CloudStorage/GoogleDrive-s.noble@northeastern.edu/My Drive/Lab/xMore/Software/scripts/R/myscripts/effect_size/misc/BrainEffeX_utils/"
+base_dir <- "/Users/stephanienoble/Library/CloudStorage/GoogleDrive-s.noble@northeastern.edu/My Drive"
+utils_package_local <- paste0(base_dir,"/Lab/xMore/Software/scripts/R/myscripts/effect_size/misc/BrainEffeX_utils/")
 load_all(utils_package_local)
 
 # Option 2. full install of local package (for dev):
-# utils_package_local <- "/Users/stephanienoble/Library/CloudStorage/GoogleDrive-s.noble@northeastern.edu/My Drive/Lab/xMore/Software/scripts/R/myscripts/effect_size/misc/BrainEffeX_utils/"
+# utils_package_local <- paste0(base_dir,"/xMore/Software/scripts/R/myscripts/effect_size/misc/BrainEffeX_utils/")
 # install(utils_package_local)
 # library(BrainEffeX.utils)
 
@@ -29,18 +30,24 @@ load_all(utils_package_local)
 
 ## User-defined paths & parameters
 
+# input and output directories
+
+data_dir <- paste0(base_dir,"/Lab/xMore/Software/scripts/R/myscripts/effect_size/BrainEffeX/data/")
+out_basename_basename <- paste0(base_dir,"/Lab/Tasks-Ongoing/K99/Effect_Size/manuscript/figures/plots/")
+
 # plot params - USER-DEFINED
 
 plot_output_style <- c('manuscript') # c('shiny', 'manuscript') # 'shiny': save plots for one study at a time, simci-spatial type, add descrip; 'manuscript': save plots concatenated across all studies, add descrip
 
-all_effect_size_types <- c('d','r_sq')              # c('d', 'r_sq', 'd.full_res')
+all_effect_size_types <- c('d')              # c('d', 'r_sq', 'd.full_res')
 
-all_motion <- c('none', 'regression', 'threshold')  # c('none', 'regression', 'threshold') # TODO: stat_control -> "...regression...$d", full_residualization -> "...regression...$d.full_res"
-all_pooling <- c('net') #  # c('none','net')
+all_motion <- c('regression')  # c('none', 'regression', 'threshold') # TODO: stat_control -> "...regression...$d", full_residualization -> "...regression...$d.full_res"
+all_pooling <- c('none','net') #  # c('none','net')
+do_multi <- c(TRUE) # TRUE, FALSE
 
-all_plot_combination_styles <- c('meta')   # c('single','meta','overlapping') # note: overlapping can only be used for manuscript
+all_plot_combination_styles <- c('overlapping')   # c('single','meta','overlapping') # note: overlapping can only be used for manuscript
 all_grouping_var <- c('category')          # c('none', 'category', 'orig_stat_type') # used only for meta & overlap plots - TODO: separate out?
-all_manuscript_plot_types <- c('simci', 'spatial', 'density', 'power')  # c('simci', 'spatial', 'density', 'power') # only used for plot_output_style = 'manuscript'
+all_manuscript_plot_types <- c('density_binned')  # c('simci', 'spatial', 'density', 'density_binned', 'power', 'power_n') # only used for plot_output_style = 'manuscript'
 
 make_plots <- TRUE
 save_plots <- TRUE
@@ -70,11 +77,6 @@ if (plot_output_style == 'shiny') {
   use_minimal_title <- TRUE # cleaner title for manuscript
 }
 
-# input and output directories
-
-data_dir <- "/Users/stephanienoble/Library/CloudStorage/GoogleDrive-s.noble@northeastern.edu/My Drive/Lab/xMore/Software/scripts/R/myscripts/effect_size/BrainEffeX/data/"
-out_basename_basename <- "/Users/stephanienoble/Library/CloudStorage/GoogleDrive-s.noble@northeastern.edu/My Drive/Lab/Tasks-Ongoing/K99/Effect_Size/manuscript/figures/plots/"
-
 
 
 ## Loop over plot types and styles
@@ -86,20 +88,20 @@ for (effect_size_type in all_effect_size_types) {
 for (plot_combination_style in all_plot_combination_styles) {
 for (plot_type in all_plot_types) {
 
-print(paste0('Doing plot_combination_style: ', plot_combination_style, ' | plot_type: ', plot_type, ' | pooling: ', pooling, ' | motion: ', motion, ' | grouping_var: ', grouping_var))
+print(paste0('Doing plot_combination_style: ', plot_combination_style, ' | plot_type: ', plot_type, ' | pooling: ', pooling, ' | motion: ', motion, ' | grouping var: ', grouping_var, ' | effect size: ', effect_size_type))
 
 
 ## Set up strings
 
 combo_name <- paste0('pooling.', pooling, '.motion.', motion, '.mv.none')
-mv_combo_name <- paste0('pooling.', pooling, '.motion.', motion, '.mv.multi')
+mv_combo_basename <- paste0('pooling.', pooling, '.motion.', motion, '.mv.multi')
 
 # Correct args
 
-if (plot_combination_style == 'single' & grouping_var != 'none') {
-  grouping_var <- 'none'
-  cat("Warning: grouping_var set to 'none' for single plots\n")
-}
+# if (plot_combination_style == 'single' & grouping_var != 'none') {
+#   grouping_var <- 'none'
+#   cat("Warning: grouping_var set to 'none' for single plots\n")
+# }
 
 ## Load data
 
@@ -125,6 +127,7 @@ if (plot_combination_style == 'meta') {
   if (!(meta_str %in% names(v))) { # check if this grouping var already exists in data
     try_meta_file <- TRUE
   } else if (!(combo_name %in% names(v[[meta_str]]$data[[1]]))) { # check if this combo_name has been run
+  # } else if (!any(grepl(mv_combo_basename,names(v[[meta_str]]$data[[1]])))) { # multivariate
     try_meta_file <- TRUE
   }
 
@@ -137,6 +140,7 @@ if (plot_combination_style == 'meta') {
       if (!(meta_str %in% names(v))) { # check again for grouping var
         run_meta <- TRUE
       } else if (!(combo_name %in% names(v[[meta_str]]$data[[1]]))) { # check again for combo
+        # } else if (!any(grepl(mv_combo_basename,names(v[[meta_str]]$data[[1]])))) { # multivariate
         run_meta <- TRUE
       }
     } else { # no file
@@ -147,12 +151,11 @@ if (plot_combination_style == 'meta') {
 }
 
 if (run_meta) {
-  v <- meta_analysis(v, v$brain_masks, combo_name, grouping_var = grouping_var)
+  mv_combo_name <- names(v$data[[1]])[grepl(mv_combo_basename,names(v$data[[1]]))]
+  # v <- meta_analysis(v, v$brain_masks, combo_name, grouping_var = grouping_var)
+  v <- meta_analysis(v, v$brain_masks, mv_combo_name, grouping_var = grouping_var) # add multivariate
   save(v, file = meta_fn)
 }
-
-
-
 
 
 
@@ -178,6 +181,7 @@ if (plot_combination_style == 'single') {  # name by study
     plot_info__group_level[[all_study_names[[i]]]] <- NA
     plot_info__ref[[all_study_names[[i]]]] <- v$study$ref[i]
   }
+  cat("Warning: grouping_var set to 'none' for single plots\n")
 
 
   # sort all rows of plot_info__idx by orig_stat_type, with studies sharing same stat type next to each other
@@ -271,6 +275,11 @@ for (i in 1:length(plot_info$idx)) { # loop over panels - this_study_or_group is
       brain_masks <- v$brain_masks[[j]]
     }
 
+    if (do_multi) {
+      mv_combo_name <- names(v$data[[1]])[grepl(mv_combo_basename,names(v$data[[1]]))]
+      combo_name <- mv_combo_name
+    }
+    
     if (combo_name %in% names(data)) { # if combo_name exists in data (e.g., not all studies have net)
       if (any(!is.na(data[[combo_name]][[effect_size_type]])) > 0) {  # data is not just NA
 
@@ -278,17 +287,17 @@ for (i in 1:length(plot_info$idx)) { # loop over panels - this_study_or_group is
 
       if (plot_type == 'simci-spatial') { # shiny
         
-        pd_list[[n_studies_in_pd_list]] <- prep_data_for_plot(data = data, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_name, estimate = effect_size_type, plot_info = this_plot_info)
-        pd_list_2[[n_studies_in_pd_list]] <- prep_data_for_spatial_plot(data = data, brain_masks = brain_masks, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_name, estimate = effect_size_type, plot_info = this_plot_info)
+        pd_list[[n_studies_in_pd_list]] <- prep_data_for_plot(data = data, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_basename, estimate = effect_size_type, plot_info = this_plot_info)
+        pd_list_2[[n_studies_in_pd_list]] <- prep_data_for_spatial_plot(data = data, brain_masks = brain_masks, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_basename, estimate = effect_size_type, plot_info = this_plot_info)
         
       } else if (plot_type == 'spatial') {
         
         # TODO: we probably don't even need a dedicated function for the spatial plots, just pass the relevant info
-        pd_list[[n_studies_in_pd_list]] <- prep_data_for_spatial_plot(data = data, brain_masks = brain_masks, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_name, estimate = effect_size_type, plot_info = this_plot_info)
+        pd_list[[n_studies_in_pd_list]] <- prep_data_for_spatial_plot(data = data, brain_masks = brain_masks, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_basename, estimate = effect_size_type, plot_info = this_plot_info)
       
       } else {
       
-        pd_list[[n_studies_in_pd_list]] <- prep_data_for_plot(data = data, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_name, estimate = effect_size_type, plot_info = this_plot_info)
+        pd_list[[n_studies_in_pd_list]] <- prep_data_for_plot(data = data, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_basename, estimate = effect_size_type, plot_info = this_plot_info)
      
       }
 
@@ -314,12 +323,12 @@ for (i in 1:length(plot_info$idx)) { # loop over panels - this_study_or_group is
 
       if (plot_type == 'simci-spatial') {
         
-        panel_list[[i]] <- create_plots(pd_list, plot_type = 'simci', effect_type = effect_size_type, add_description = add_plt_description, do_minimal_title = use_minimal_title, log_list[[i]])
-        panel_list_2[[i]] <- create_plots(pd_list_2, plot_type = 'spatial', effect_type = effect_size_type, add_description = add_plt_description, do_minimal_title = use_minimal_title, log_list[[i]])
+        panel_list[[i]] <- create_plots(pd_list, plot_type = 'simci', effect_type = effect_size_type, do_multivariate = do_multi, add_description = add_plt_description, do_minimal_title = use_minimal_title, log_list[[i]])
+        panel_list_2[[i]] <- create_plots(pd_list_2, plot_type = 'spatial', effect_type = effect_size_type, do_multivariate = do_multi,add_description = add_plt_description, do_minimal_title = use_minimal_title, log_list[[i]])
       
       } else {
         
-        panel_list[[i]] <- create_plots(pd_list, plot_type = plot_type, effect_type = effect_size_type, add_description = add_plt_description, do_minimal_title = use_minimal_title, log_list[[i]])
+        panel_list[[i]] <- create_plots(pd_list, plot_type = plot_type, effect_type = effect_size_type, do_multivariate = do_multi,add_description = add_plt_description, do_minimal_title = use_minimal_title, log_list[[i]])
       
       }
       
@@ -345,7 +354,7 @@ if (make_plots) {
   if (plot_type == 'simci-spatial') {
     pp$ncol <- 2
     pp$nrow <- 1
-  } else if (plot_type == 'power') {
+  } else if (plot_type == 'power' | plot_type == 'power_n') {
     pp$ncol <- length(panel_list)
     pp$nrow <- 1
   } else {
@@ -367,13 +376,19 @@ if (make_plots) {
       grouping_var_str <- ''
     }
     
+    if (do_multi) {
+      multi_str <- 'mv_'
+    } else {
+      multi_str <- ''
+    }
+    
     if (plot_output_style == 'manuscript') {
       grouping_var_str <- paste0('_', plot_type)
     } else { 
       grouping_var_str <- paste0('_', plot_type, '_', effect_size_type)
     }
     
-    out_basename <- paste0(out_basename_basename, plot_output_style, '/', effect_size_type, '/motion_', motion, '/pooling_', pooling, '/', plot_combination_style, grouping_var_str)
+    out_basename <- paste0(out_basename_basename, plot_output_style, '/', effect_size_type, '/motion_', motion, '/pooling_', pooling, '/', multi_str, plot_combination_style, grouping_var_str)
     if (plot_type == 'simci-spatial') { # use out_basename as dir, otherwise use as basename for concat plots
       out_basename <- paste0(out_basename,'/')
     }
