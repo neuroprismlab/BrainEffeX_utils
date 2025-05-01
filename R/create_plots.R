@@ -50,9 +50,9 @@ create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd',
   # for binning results - TESTING
   pp$effect_size_bins <- c(0, 0.05, 0.2, 0.5, 0.8, 1.5, 2.5, Inf)
   pp$effect_size_bin_labels <- c('Extremely Small','Very Small','Small','Medium','Large','Very Large','Extremely Large')
-  pp$power_bins <- c(0,0.2,0.5,0.8,1)
-  pp$power_bin_labels <- c('Very Low','Low','Medium','High')
-  pp$sample_size_bins <- c(0,25,50,100,500,1000,5000,Inf)
+  pp$power_bins <- c(0, 0.2, 0.5, 0.8, 1, Inf)
+  pp$power_bin_labels <- c('Very Low','Low','Medium','High', 'Very High')
+  pp$sample_size_bins <- c(0, 25, 50, 100, 500, 1000, 5000, Inf)
   pp$sample_size_bin_labels <- c('Lab','Lab+','Center','Consortium','Consortium+','Large Consortium','Massive Consortium')
   
   pp$axis_title_size = element_text(size = 16) 
@@ -73,14 +73,15 @@ create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd',
     p <- plot_simci_panel(pp, plot_data_list)
     # p <- plot_simci_panel(plot_data_list)
 
-  } else if (plot_type == 'density') {
-
-    p <- plot_density_panel(pp, plot_data_list)
-    # p <- plot_density_panel(plot_data_list)
-
-  } else if (plot_type == 'density_binned') {
+  } else if (grepl('density', plot_type)) {
     
-    p <- plot_density_panel(pp, plot_data_list, use_effect_size_bin = TRUE)
+    if (grepl('binned', plot_type)) {
+      pp$use_effect_size_bin <- TRUE
+    } else {
+      pp$use_effect_size_bin <- FALSE
+    }
+    
+    p <- plot_density_panel(pp, plot_data_list, use_effect_size_bin = pp$use_effect_size_bin)
     
   } else if (plot_type == 'spatial') {
 
@@ -90,15 +91,21 @@ create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd',
       p <- plot_connectivity_panel(pp, plot_data_list)
     }
 
-  } else if (plot_type == 'power' | plot_type == 'power_n') {
+  } else if (grepl('power', plot_type)) {
     
-    if (plot_type == 'power_n') {
+    if (grepl('power_n', plot_type)) {
       output_type <- 'n'
     } else {
       output_type <- 'power'
     }
     
-    p <- plot_power_panel(pp, plot_data_list, output_type)
+    if (grepl('binned', plot_type)) {
+      pp$use_effect_size_bin <- TRUE
+    } else {
+      pp$use_effect_size_bin <- FALSE
+    }
+    
+    p <- plot_power_panel(pp, plot_data_list, output_type, use_effect_size_bin = pp$use_effect_size_bin)
   
   } else {
     error('Please specify simci, density, or spatial')

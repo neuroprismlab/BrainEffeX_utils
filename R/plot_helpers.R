@@ -117,7 +117,6 @@ plot_density_panel <- function(pp, plot_data_list, use_effect_size_bin = FALSE) 
   # pp$xlim <- c(-0.15, 0.15)
   pp$alpha <- 0.1
   pp$size <- 0.4
-  pp$colors__sample_size <- data.frame(labels = c("<1,000", "1,000-5,000", "5,000-10,000", ">10,000", "NA"), colors = c("#82A651", "#3AB7BE", "#E7786C", "#B873F7","#B59410"), breaks_upper_lim = c(1000, 5000, 10000, 999999999, Inf))
   pp$hist_bin_width <- 0.001 # when there are all 0's, we want a very thin hist instead of density
   pp$xlabel <- "Effect Size"
   pp$ylabel <- "Density"
@@ -243,9 +242,14 @@ plot_density_panel <- function(pp, plot_data_list, use_effect_size_bin = FALSE) 
     p <- p +
       scale_x_continuous(breaks = c(1:(length(pp$effect_size_bins)-1)),
                           labels = pp$effect_size_bin_labels, # replace x ticks with labels
-                          limits = c(0.5,(length(pp$effect_size_bins)-1)),
+                          # limits = c(0.5,(length(pp$effect_size_bins)-1)),
                           guide = guide_axis(check.overlap = FALSE)) +
+      coord_cartesian(xlim = c(0.5, (length(pp$effect_size_bins)-1))) +
       scale_y_continuous(limits = c(0, 1)) +
+      theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()
+      ) +
       theme(axis.text.x = element_text(angle = 45, hjust = 1))   # Rotate x-axis labels
       
             
@@ -698,131 +702,203 @@ plot_full_mat <- function(pp, triangle_ordered, ukb = FALSE, mapping_path = NA) 
 
 #########################################################################
 # Plot power
-plot_power_panel <- function(pp, plot_data_list, output_type) {
+plot_power_panel <- function(pp, plot_data_list, output_type, use_effect_size_bin = FALSE) {
   
   library(pwr)
   library(ggbeeswarm)
   
-  # add density-specific plot params
+  # add power-specific plot params
   
-  # pp$xlim <- c(-0.15, 0.15)
-  pp$alpha <- 0.1
   pp$size <- 0.4
-  pp$colors__sample_size <- data.frame(labels = c("<1,000", "1,000-5,000", "5,000-10,000", ">10,000", "NA"), colors = c("#82A651", "#3AB7BE", "#E7786C", "#B873F7","#B59410"), breaks_upper_lim = c(1000, 5000, 10000, 999999999, Inf))
-  pp$hist_bin_width <- 0.001 # when there are all 0's, we want a very thin hist instead of density
-  pp$xlabel <- "Effect Size"
-  pp$ylabel <- "Density"
-  
-  # for power calc:
-  pp$alpha <- 0.05
+  pp$alpha <- 0.1
+  pp$alpha_sig <- 0.05/2 # two-sided
   pp$n_for_pwr <- 1000
-  pp$power_threshold <- 0.8
-  pp$n_thresh <- 1000
+  pp$reference_power <- 0.8
+  pp$reference_n <- 1000
   # for plot
-  pp$y_big <- 200000 # TODO: need better solution
-  pp$width_jitter <- 0.6
-  
+  pp$y_big <- 10000 # TODO: need better solution
   pp$thresholded_sizes <- c(1, 5)
   pp$thresholded_colors <- c("red", "black")
   
-  pp$xlim = pp$effect_size_limits_smaller # very small for meta
+  this_type <- "two.sample"
+  message("TESTING: assuming two-sample t-test for power calculation.")
+  
+  if (use_effect_size_bin) {
+    if (output_type == "power") {
+      pp$xlabel <- "Power"
+      pp$ylabel <- "Proportion"
+      ylim <- c(0, 1)
+      these_bins <- pp$power_bins
+      these_bin_labels <- pp$power_bin_labels
+    } else {
+      pp$xlabel <- "Sample Size"
+      pp$ylabel <- "Proportion"
+      ylim <- c(0, pp$y_big) # set to max y - def need a better solution
+      these_bins <- pp$sample_size_bins
+      these_bin_labels <- pp$sample_size_bin_labels
+    }
+    
+  } else{
+    pp$hist_bin_width <- 0.001 # when there are all 0's, we want a very thin hist instead of density
+    pp$xlabel <- "Effect Size"
+    pp$ylabel <- "Density"
+    pp$width_jitter <- 0.6
+    pp$xlim = pp$effect_size_limits_smaller # very small for meta # TODO: change back or automate
+  }
+  
+  if (output_type == "power") {
+    this_thresh <- pp$reference_power
+    # thresholded_sizes <- rev(pp$thresholded_sizes)
+    # thresholded_colors <- rev(pp$thresholded_colors)
+  } else {
+    this_thresh <- pp$reference_n
+    # thresholded_sizes <- pp$thresholded_sizes
+    # thresholded_colors <- pp$thresholded_colors
+    # ylim <- c(0, max(y, na.rm = TRUE) + 1) # set to max y))
+  }
+  
+  
   
   # make plot object
   
   p <- ggplot()
   
-  
   for (i in seq_along(plot_data_list)) {
     
-    # color plots by binned sample size
-    
-    if (plot_data_list[[i]]$extra_study_details$n_title == "n = ") {
-      plot_data_list[[i]]$extra_study_details$n_title <- "n = 9999999999" # hack to plot empty sample size in gold
-    }
-    
-    # TODO: use to color
-    sample_size_category <- cut(as.numeric(gsub("n = ", "", plot_data_list[[i]]$extra_study_details$n_title)),
-                                breaks = c(-Inf, pp$colors__sample_size$breaks_upper_lim),
-                                labels = pp$colors__sample_size$labels)
-    
-    # get power # TODO: two-sample only for testing
-    
-    # if (plot_data_list[[i]]$study_details$orig_stat_type == "t") {
-    # infer whether one sample or two sample
-    # if test component 2 is empty, it's one sample
-    # if (plot_data_list[[i]]$study_details$test_component_2 == "") {
-    #   this_type <- "one.sample"
-    # } else {
-    #     this_type <- "two.sample"
-    #   }
-    # } else {
-    this_type <- "two.sample"
-    warning("TESTING: assuming two-sample t-test for power calculation.")
-    # }
-    
-    y <- numeric(length(plot_data_list[[i]]$data$cons_estimate))
-    
-    for (j in seq_along(plot_data_list[[i]]$data$cons_estimate)) {
-      if (output_type == "power") {
-        tmp <- pwr.t.test(d = plot_data_list[[i]]$data$cons_estimate[j], sig.level = pp$alpha, n = pp$n_for_pwr, type = this_type)
-        y[j] <- tmp$power
-      } else {
-        if (plot_data_list[[i]]$data$cons_estimate[j] > 0) { # only calculate power for positive estimates
-          tmp <- pwr.t.test(d = plot_data_list[[i]]$data$cons_estimate[j], sig.level = pp$alpha, power = pp$power_threshold, type = this_type)
-          y[j] <- tmp$n
-        } else if (plot_data_list[[i]]$data$cons_estimate[j] == 0) {
-          y[j] <- pp$y_big # set to a large number # TODO
+      # color plots by binned sample size
+      
+      if (plot_data_list[[i]]$extra_study_details$n_title == "n = ") {
+        plot_data_list[[i]]$extra_study_details$n_title <- "n = 9999999999" # hack to plot empty sample size in gold
+      }
+      
+      # TODO: use to color
+      sample_size_category <- cut(as.numeric(gsub("n = ", "", plot_data_list[[i]]$extra_study_details$n_title)),
+                                  breaks = c(-Inf, pp$colors__sample_size$breaks_upper_lim),
+                                  labels = pp$colors__sample_size$labels)
+      
+      # get power # TODO: two-sample only for testing
+      
+      # if (plot_data_list[[i]]$study_details$orig_stat_type == "t") {
+      # infer whether one sample or two sample
+      # if test component 2 is empty, it's one sample
+      # if (plot_data_list[[i]]$study_details$test_component_2 == "") {
+      #   this_type <- "one.sample"
+      # } else {
+      #     this_type <- "two.sample"
+      #   }
+      # } else {
+      # }
+      
+      y <- numeric(length(plot_data_list[[i]]$data$cons_estimate))
+      
+      for (j in seq_along(plot_data_list[[i]]$data$cons_estimate)) {
+        if (output_type == "power") {
+          tmp <- pwr.t.test(d = plot_data_list[[i]]$data$cons_estimate[j], sig.level = pp$alpha_sig, n = pp$n_for_pwr, type = this_type)
+          y[j] <- tmp$power
+        } else {
+          if (plot_data_list[[i]]$data$cons_estimate[j] != 0) { # can only calculate n for non-zero effects
+            tmp <- pwr.t.test(d = abs(plot_data_list[[i]]$data$cons_estimate[j]), sig.level = pp$alpha_sig, power = pp$reference_power, type = this_type)
+            y[j] <- tmp$n
+          } else {
+            y[j] <- pp$y_big
+          }
         }
       }
-    }
+      
+      # TESTING
+      # if (length(plot_data_list) > 4) {
+      #   print(y)
+      # }
+      
     
-    if (output_type == "power") {
-      this_thresh <- pp$power_threshold
-      thresholded_sizes <- rev(pp$thresholded_sizes)
-      thresholded_colors <- rev(pp$thresholded_colors)
-      ylim <- c(0, 1)
-    } else {
-      this_thresh <- pp$n_thresh
-      thresholded_sizes <- pp$thresholded_sizes
-      thresholded_colors <- pp$thresholded_colors
-      # ylim <- c(0, max(y, na.rm = TRUE) + 1) # set to max y))
-      ylim <- c(0, pp$y_big) # set to max y - def need a better solution
-    }
     
-    # create the plot
     
-    # create dataframe with y, sample_size_category, and binary of whether y > pp$power_threshold
-    df <- data.frame(y = y, sample_size_category = sample_size_category, thresh = y > this_thresh)
-    
-    p <- p +
-      geom_violin(data = df,
-                  aes(x = sample_size_category, y = y)) +
-      geom_quasirandom(data = df,
-                       aes(x = sample_size_category, y = y),
-                       dodge.width = 0.9, varwidth = TRUE) +
-      # geom_jitter(data = df,
-      #             aes(x = sample_size_category, y = y, color = thresh),
-      #             height = 0, width = pp$width_jitter, size = ifelse(df$thresh, thresholded_sizes[1],thresholded_sizes[2]), alpha = 0.7) +  # Larger points for > threshold
-      scale_color_manual(values = c("FALSE" = thresholded_colors[1], "TRUE" = thresholded_colors[2])) +  # Colors for below/above threshold
-      geom_hline(yintercept = this_thresh, linetype = "dashed", color = "red") +  # Add a threshold line
-      labs(y = output_type) + # rename y axis
-      theme_minimal() +
-      theme(axis.title.x = element_blank(),
-            axis.text.x = element_blank(),
-            legend.position = "none") +  # Hides the legend
-      coord_cartesian(ylim = ylim) 
-    
-    # pp$power_threshold <- 0.8
-    # p <- ggplot(data = data.frame(power = all_power, sample_size_category = sample_size_category),
-    #             aes(x = sample_size_category, y = power, fill = power > pp$power_threshold)) +
-    #   geom_violin(alpha = 0.5, color = "black") +  # Base violin plot
-    #   scale_fill_manual(values = c("FALSE" = "blue", "TRUE" = "red")) +  # Colors for below/above threshold
-    #   geom_hline(yintercept = pp$power_threshold, linetype = "dashed", color = "black") +  # Add a threshold line
-    #   theme_minimal() +
-    #   theme(axis.title.x = element_blank(),  # Remove x-axis title
-    #         axis.text.x = element_blank())   # Remove x-axis tick labels
-    
+      if (use_effect_size_bin) {
+        
+        ######## IN PROGRESS
+        
+        
+        # create dataframe with y, sample_size_category, and binary of whether y > pp$reference_power
+        # df <- data.frame(y = y, sample_size_category = sample_size_category, thresh = y > this_thresh)
+        
+        y__binned <- as.numeric(cut(abs(y), breaks = these_bins, right = FALSE))
+        
+        # manually make counts & normalize
+        y_counts <- as.data.frame( table(y__binned) )
+        colnames(y_counts) <- c("category", "count")
+        y_counts$category <- as.numeric(as.character(y_counts$category))
+        y_counts$count <- y_counts$count / sum(y_counts$count) # normalize counts
+        
+        # # manually add start and end points at zero
+        
+        if (length(unique(y_counts$category)) == 1) {
+          
+          p <- p + geom_col(data = data.frame(x = y_counts$category, y = y_counts$count, sample_size_category = sample_size_category),
+                            aes(x = x, y = y, fill = sample_size_category), 
+                            width = 0.25, alpha = pp$alpha, color = NA)
+          
+        } else {
+          
+          # fill in 0 counts for the other categories
+          y_counts <- merge(data.frame(category = 1:(length(these_bins)-1)), y_counts, by = "category", all.x = TRUE)
+          y_counts$count[is.na(y_counts$count)] <- 0 # fill in 0 counts
+          
+          p <- p + 
+            geom_area(data = data.frame(x = y_counts$category, y = y_counts$count, sample_size_category = sample_size_category),
+                      aes(x = x, y = y, fill = sample_size_category, color = sample_size_category), 
+                      alpha = pp$alpha * 0.5) +
+            geom_line(data = data.frame(x = y_counts$category, y = y_counts$count, sample_size_category = sample_size_category),
+                        aes(x = x, y = y, fill = sample_size_category, color = sample_size_category), 
+                        size = pp$size, alpha = pp$alpha)
+        }
+      
+      
+      
+      } else { # un-binned
+      
+      p <- p +
+        geom_violin(data = df,
+                    aes(x = sample_size_category, y = y)) +
+        geom_quasirandom(data = df,
+                         aes(x = sample_size_category, y = y),
+                         dodge.width = 0.9, varwidth = TRUE) +
+        scale_color_manual(values = c("FALSE" = thresholded_colors[1], "TRUE" = thresholded_colors[2])) +  # Colors for below/above threshold
+        geom_hline(yintercept = this_thresh, linetype = "dashed", color = "red") +  # Add a threshold line
+        labs(y = output_type) + # rename y axis
+        theme_minimal() +
+        theme(axis.title.x = element_blank(),
+              axis.text.x = element_blank(),
+              legend.position = "none") +  # Hides the legend
+        coord_cartesian(ylim = ylim)
+      
+      }
+      
+      
+
   }
+  
+  # format theme elements
+  
+  if (use_effect_size_bin) {
+    p <- p + theme_minimal() + labs(x = pp$xlabel, y = pp$ylabel) +
+      theme(legend.position = "none", axis.text.y = pp$axis_text_size, axis.text.x = pp$axis_text_size, axis.title = pp$axis_title_size) +
+      # scale_fill_manual(values = pp$colors__sample_size$colors, breaks = pp$colors__sample_size$labels) +
+      # scale_color_manual(values = pp$colors__sample_size$colors, breaks = pp$colors__sample_size$labels) +
+      scale_x_continuous(breaks = c(1:(length(these_bins)-1)),
+                         labels = these_bin_labels, # replace x ticks with labels
+                         # limits = c(0.5,(length(these_bins) - 0.25)),
+                         guide = guide_axis(check.overlap = FALSE)) +
+      coord_cartesian(xlim = c(0.5, length(these_bins) - 1)) + # avoid cutting off the edge
+      scale_y_continuous(limits = c(0, 1)) +
+      theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()
+      ) +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))   # Rotate x-axis labels
+  }
+  
+  
+  
   
   return(p)
   
