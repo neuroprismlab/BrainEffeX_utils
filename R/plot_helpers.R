@@ -21,7 +21,7 @@
 #' @examples
 #' # Example usage
 #' # plot_simci_panel(plot_data)
-plot_simci_panel <- function(pp, plot_data_list) {
+plot_simci_panel <- function(pp, plot_data_list, meta = FALSE) {
 
   # add simci-specific plot params
   pp$non_overlap_colors <- "#4ECDC4"
@@ -79,7 +79,7 @@ plot_simci_panel <- function(pp, plot_data_list) {
 
     # plot
 
-      if ((length(below_cross_idx) > 1) || (length(above_cross_idx) > 1)) {
+      if (meta)) {
         # IN PROGRESS: plot everything below below_cross_idx[[1]] in grey
         p <- add_geom_layers(p, plot_df, pp$other_overlap_colors, pp$alpha_line, pp$alpha_ribbon)
       } else {
