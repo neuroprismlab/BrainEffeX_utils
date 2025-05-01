@@ -38,8 +38,8 @@ create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd',
     pp$effect_size_limits_smaller <- c(-0.15, 0.15)
   }
   
-  pp$axis_title_size = element_text(size = 16) 
-  pp$axis_text_size = element_text(size = 16)
+  pp$axis_title_size = element_text(size = 22) 
+  pp$axis_text_size = element_text(size = 22)
 
   # General setup
 
