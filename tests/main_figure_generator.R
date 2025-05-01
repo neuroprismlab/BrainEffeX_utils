@@ -42,12 +42,12 @@ plot_output_style <- c('manuscript') # c('shiny', 'manuscript') # 'shiny': save 
 all_effect_size_types <- c('d')              # c('d', 'r_sq', 'd.full_res')
 
 all_motion <- c('regression')  # c('none', 'regression', 'threshold') # TODO: stat_control -> "...regression...$d", full_residualization -> "...regression...$d.full_res"
-all_pooling <- c('none','net') #  # c('none','net')
-do_multi <- c(TRUE) # TRUE, FALSE
+all_pooling <- c('none') #  # c('none','net')
+do_multi <- c(FALSE) # TRUE, FALSE
 
-all_plot_combination_styles <- c('overlapping')   # c('single','meta','overlapping') # note: overlapping can only be used for manuscript
+all_plot_combination_styles <- c('single')   # c('single','meta','overlapping') # note: overlapping can only be used for manuscript
 all_grouping_var <- c('category')          # c('none', 'category', 'orig_stat_type') # used only for meta & overlap plots - TODO: separate out?
-all_manuscript_plot_types <- c('density_binned')  # c('simci', 'spatial', 'density', 'density_binned', 'power', 'power_n') # only used for plot_output_style = 'manuscript'
+all_manuscript_plot_types <- c('spatial_pow_n_thr')  # c('simci', 'spatial', 'spatial_pow_thr', 'spatial_pow_n_thr', 'density', 'density_binned', 'power', 'power_n','power_binned','power_n_binned') # only used for plot_output_style = 'manuscript'
 
 make_plots <- TRUE
 save_plots <- TRUE
@@ -285,15 +285,18 @@ for (i in 1:length(plot_info$idx)) { # loop over panels - this_study_or_group is
 
       # prep
 
+      
       if (plot_type == 'simci-spatial') { # shiny
         
         pd_list[[n_studies_in_pd_list]] <- prep_data_for_plot(data = data, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_basename, estimate = effect_size_type, plot_info = this_plot_info)
-        pd_list_2[[n_studies_in_pd_list]] <- prep_data_for_spatial_plot(data = data, brain_masks = brain_masks, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_basename, estimate = effect_size_type, plot_info = this_plot_info)
+        # pd_list_2[[n_studies_in_pd_list]] <- prep_data_for_spatial_plot(data = data, brain_masks = brain_masks, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_basename, estimate = effect_size_type, plot_info = this_plot_info)
+        pd_list_2[[n_studies_in_pd_list]] <- prep_data_for_plot(data = data, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_basename, estimate = effect_size_type, plot_info = this_plot_info, prep_spatial = TRUE, brain_masks = brain_masks)
         
-      } else if (plot_type == 'spatial') {
+      } else if (grepl('spatial', plot_type)) {
         
-        # TODO: we probably don't even need a dedicated function for the spatial plots, just pass the relevant info
-        pd_list[[n_studies_in_pd_list]] <- prep_data_for_spatial_plot(data = data, brain_masks = brain_masks, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_basename, estimate = effect_size_type, plot_info = this_plot_info)
+        # TODO: finally combined prep for spatial with general prep. test more thoroughly for orig spatial and remove
+        # pd_list[[n_studies_in_pd_list]] <- prep_data_for_spatial_plot(data = data, brain_masks = brain_masks, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_basename, estimate = effect_size_type, plot_info = this_plot_info)
+        pd_list[[n_studies_in_pd_list]] <- prep_data_for_plot(data = data, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_basename, estimate = effect_size_type, plot_info = this_plot_info, prep_spatial = TRUE, brain_masks = brain_masks)
       
       } else {
       
