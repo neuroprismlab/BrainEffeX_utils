@@ -181,7 +181,8 @@ if (!any(is.nan(data[[combo_name]][[estimate]]))) { # check if data exists
       mv_ci = c(data[[full_mv_combo_name]][[ci_lb]], data[[full_mv_combo_name]][[ci_ub]]),
       grouping_var = plot_info$grouping_var,
       group_level = plot_info$group_level,
-      ref = plot_info$ref
+      ref = plot_info$ref,
+      num_tests_corrected = num_tests
     ),
     study_details = study_details
   )
