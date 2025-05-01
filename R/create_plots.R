@@ -18,7 +18,7 @@
 #' @examples
 #' # Example usage
 #' # create_plots(pd)
-create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd', add_description = FALSE, do_minimal_title = FALSE, summary_info = NULL) {
+create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd', add_description = FALSE, do_minimal_title = FALSE, summary_info = NULL, meta = FALSE) {
   
   library(ggplot2)
 
@@ -53,7 +53,7 @@ create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd',
   # par(mar=pp$mar)
   if (plot_type == 'simci') {
 
-    p <- plot_simci_panel(pp, plot_data_list)
+    p <- plot_simci_panel(pp, plot_data_list, meta)
     # p <- plot_simci_panel(plot_data_list)
 
   } else if (plot_type == 'density') {
