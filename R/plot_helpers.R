@@ -35,6 +35,10 @@ plot_simci_panel <- function(pp, plot_data_list) {
   pp$intercept_line_size <- 0.3
   pp$xlabel <- "Edges / Voxels, sorted by effect size"
   pp$ylabel <- "Effect Size"
+  
+  #temporary fix for coloring everything grey
+  pp$non_overlap_colors <- pp$other_overlap_colors
+  pp$overlap_colors <-pp$other_overlap_colors
 
   # little function to simplify plotting
   add_geom_layers <- function(p, data, color, alpha_line, alpha_ribbon) {
@@ -59,12 +63,15 @@ plot_simci_panel <- function(pp, plot_data_list) {
       ub = plot_data_list[[i]]$data$ub,
       lb = plot_data_list[[i]]$data$lb
     )
+    pp$ylim = pp$effect_size_limits_big
+    plot_df$lb <- pmax(plot_df$lb, pp$ylim[1])
+    plot_df$ub <- pmin(plot_df$ub, pp$ylim[2])
     below_cross_idx <- plot_data_list[[i]]$data$below_cross_idx
     above_cross_idx <- plot_data_list[[i]]$data$above_cross_idx
 
     # set y limits
     # if (max(abs(c(plot_df$lb,plot_df$ub))) > pp$effect_size_thresh) {
-      pp$ylim = pp$effect_size_limits_big
+      
     # } else {
     #   pp$ylim = pp$effect_size_limits_small
     # }
