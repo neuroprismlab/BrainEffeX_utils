@@ -279,7 +279,7 @@ plot_density_panel <- function(pp, plot_data_list, use_effect_size_bin = FALSE) 
 #' @examples
 #' # Example usage
 #' # plot_activation_maps(plot_data)
-plot_activation_panel <- function(pp, plot_data_list) {
+plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
 
   library(neurobase)
   library(grid)
@@ -321,7 +321,14 @@ plot_activation_panel <- function(pp, plot_data_list) {
 
       # create nifti for this data
 
-      data <- plot_data_list[[i]]$data$estimate
+      if (!is.na(threshold_category)) {
+        # get binary mask and then apply
+        data <- plot_power_panel(pp, list(plot_data_list[[i]]), threshold_category, use_category_bins = FALSE, do_spatial_plot = TRUE)
+        data <- plot_data_list[[i]]$data$estimate * data[[1]]$data$estimate
+        data[is.na(data)] <- 0 # set all non-masked values to 0
+      } else {
+        data <- plot_data_list[[i]]$data$estimate
+      }
       mask <- plot_data_list[[i]]$extra_study_details$brain_masks$mask
       nii <- create_nifti(template, data, mask)
 
@@ -505,7 +512,7 @@ colorbar_custom <- function(breaks, #the minimum and maximum z values for which
 #' @examples
 #' # Example usage
 #' # plot_connectivity_panel(plot_data)
-plot_connectivity_panel <- function(pp, plot_data_list) {
+plot_connectivity_panel <- function(pp, plot_data_list, threshold_category = NA) {
 
   library(reshape2)
 
@@ -534,9 +541,22 @@ plot_connectivity_panel <- function(pp, plot_data_list) {
 
     #       template <- plot_data_list[[i]]$study_details$ref
 
-    data <- plot_data_list[[i]]$data$estimate
+    if (!is.na(threshold_category)) {
+      # get binary mask and then apply
+      data <- plot_power_panel(pp, list(plot_data_list[[i]]), threshold_category, use_category_bins = FALSE, do_spatial_plot = TRUE)
+      data <- plot_data_list[[i]]$data$estimate * data[[1]]$data$estimate
+      data[is.na(data)] <- 0 # set all non-masked values to 0
+    } else {
+      data <- plot_data_list[[i]]$data$estimate
+    }
     mask <- plot_data_list[[i]]$extra_study_details$brain_masks$mask
+    # catch mask if doesn't exist
+    if (is.null(mask)) {
+      stop("Mask not found. Check that data in correct format (and not using multivariate).")
+    }
 
+
+    
     p <- plot_full_mat(pp, data, mapping_path = mapping_path)
 
   }
@@ -589,6 +609,10 @@ plot_full_mat <- function(pp, triangle_ordered, ukb = FALSE, mapping_path = NA) 
 
     n_vars <- length(triangle_ordered)
 
+    # try catch
+    if (!length(triangle_ordered) %in% possible_lengths) {
+      stop(paste0("Length of triangle_ordered (", length(triangle_ordered), ") does not match any possible lengths: ", paste(possible_lengths, collapse = ", ")))
+    }
     using_pooling <- pooling_opts[which(possible_lengths == n_vars)]
     use_diag <- diag_opts[which(possible_lengths == n_vars)]
 
@@ -702,7 +726,7 @@ plot_full_mat <- function(pp, triangle_ordered, ukb = FALSE, mapping_path = NA) 
 
 #########################################################################
 # Plot power
-plot_power_panel <- function(pp, plot_data_list, output_type, use_effect_size_bin = FALSE) {
+plot_power_panel <- function(pp, plot_data_list, output_type, use_category_bins = FALSE, do_spatial_plot = FALSE) {
   
   library(pwr)
   library(ggbeeswarm)
@@ -722,23 +746,29 @@ plot_power_panel <- function(pp, plot_data_list, output_type, use_effect_size_bi
   
   this_type <- "two.sample"
   message("TESTING: assuming two-sample t-test for power calculation.")
+
+  if (output_type == "power") {
+    pp$xlabel <- "Power"
+    pp$ylabel <- "Proportion"
+    ylim <- c(0, 1)
+  } else {
+    pp$xlabel <- "Sample Size"
+    pp$ylabel <- "Proportion"
+    ylim <- c(0, pp$y_big) # set to max y - def need a better solution
+  }
   
-  if (use_effect_size_bin) {
+  if (use_category_bins) {
+    
     if (output_type == "power") {
-      pp$xlabel <- "Power"
-      pp$ylabel <- "Proportion"
-      ylim <- c(0, 1)
       these_bins <- pp$power_bins
       these_bin_labels <- pp$power_bin_labels
     } else {
-      pp$xlabel <- "Sample Size"
-      pp$ylabel <- "Proportion"
-      ylim <- c(0, pp$y_big) # set to max y - def need a better solution
       these_bins <- pp$sample_size_bins
       these_bin_labels <- pp$sample_size_bin_labels
     }
     
-  } else{
+  } else {
+    
     pp$hist_bin_width <- 0.001 # when there are all 0's, we want a very thin hist instead of density
     pp$xlabel <- "Effect Size"
     pp$ylabel <- "Density"
@@ -757,6 +787,9 @@ plot_power_panel <- function(pp, plot_data_list, output_type, use_effect_size_bi
     # ylim <- c(0, max(y, na.rm = TRUE) + 1) # set to max y))
   }
   
+  if (do_spatial_plot && use_category_bins) {
+    error("Currently not supported to plot spatial maps with binned effect sizes.")
+  }
   
   
   # make plot object
@@ -813,9 +846,7 @@ plot_power_panel <- function(pp, plot_data_list, output_type, use_effect_size_bi
     
     
     
-      if (use_effect_size_bin) {
-        
-        ######## IN PROGRESS
+      if (use_category_bins) {
         
         
         # create dataframe with y, sample_size_category, and binary of whether y > pp$reference_power
@@ -829,11 +860,12 @@ plot_power_panel <- function(pp, plot_data_list, output_type, use_effect_size_bi
         y_counts$category <- as.numeric(as.character(y_counts$category))
         y_counts$count <- y_counts$count / sum(y_counts$count) # normalize counts
         
-        # # manually add start and end points at zero
         
         if (length(unique(y_counts$category)) == 1) {
           
-          p <- p + geom_col(data = data.frame(x = y_counts$category, y = y_counts$count, sample_size_category = sample_size_category),
+          df <- data.frame(x = y_counts$category, y = y_counts$count, sample_size_category = sample_size_category)
+          
+          p <- p + geom_col(data = df,
                             aes(x = x, y = y, fill = sample_size_category), 
                             width = 0.25, alpha = pp$alpha, color = NA)
           
@@ -843,33 +875,67 @@ plot_power_panel <- function(pp, plot_data_list, output_type, use_effect_size_bi
           y_counts <- merge(data.frame(category = 1:(length(these_bins)-1)), y_counts, by = "category", all.x = TRUE)
           y_counts$count[is.na(y_counts$count)] <- 0 # fill in 0 counts
           
+          df <- data.frame(x = y_counts$category, y = y_counts$count, sample_size_category = sample_size_category)
+          
           p <- p + 
-            geom_area(data = data.frame(x = y_counts$category, y = y_counts$count, sample_size_category = sample_size_category),
+            geom_area(data = df,
                       aes(x = x, y = y, fill = sample_size_category, color = sample_size_category), 
                       alpha = pp$alpha * 0.5) +
-            geom_line(data = data.frame(x = y_counts$category, y = y_counts$count, sample_size_category = sample_size_category),
+            geom_line(data = df,
                         aes(x = x, y = y, fill = sample_size_category, color = sample_size_category), 
                         size = pp$size, alpha = pp$alpha)
         }
       
       
-      
       } else { # un-binned
       
-      p <- p +
-        geom_violin(data = df,
-                    aes(x = sample_size_category, y = y)) +
-        geom_quasirandom(data = df,
-                         aes(x = sample_size_category, y = y),
-                         dodge.width = 0.9, varwidth = TRUE) +
-        scale_color_manual(values = c("FALSE" = thresholded_colors[1], "TRUE" = thresholded_colors[2])) +  # Colors for below/above threshold
-        geom_hline(yintercept = this_thresh, linetype = "dashed", color = "red") +  # Add a threshold line
-        labs(y = output_type) + # rename y axis
-        theme_minimal() +
-        theme(axis.title.x = element_blank(),
-              axis.text.x = element_blank(),
-              legend.position = "none") +  # Hides the legend
-        coord_cartesian(ylim = ylim)
+        df <- data.frame(x = sample_size_category, y = y)
+        
+        if (do_spatial_plot) { # make spatial plot
+          
+          if (length(plot_data_list) > 1) {
+            stop("Spatial plot only works for all_plot_combination_styles = 'single'")
+          }
+          
+          # threshold
+          if (output_type == "power") {
+            plot_data_list[[i]]$data$estimate <- df$y > this_thresh
+          } else {
+            plot_data_list[[i]]$data$estimate <- df$y < this_thresh
+          }
+          
+          p <- plot_data_list
+          
+          # # plot
+          # if (plot_data_list[[1]]$extra_study_details$ref[[1]] == 'voxel') { # TODO: check
+          #   p <- plot_activation_panel(pp, plot_data_list)
+          # } else {
+          #   p <- plot_connectivity_panel(pp, plot_data_list)
+          # }
+          
+
+        } else { # standard
+        
+          p <- p +
+            geom_violin(data = df,
+                        aes(x = sample_size_category, y = y)) +
+            geom_quasirandom(data = df,
+                             aes(x = sample_size_category, y = y),
+                             dodge.width = 0.9, varwidth = TRUE) +
+            # scale_color_manual(values = c("FALSE" = thresholded_colors[1], "TRUE" = thresholded_colors[2])) +  # Colors for below/above threshold
+            geom_hline(yintercept = this_thresh, linetype = "dashed", color = "red") +  # Add a threshold line
+            labs(y = output_type) + # rename y axis
+            theme_minimal() +
+            theme(axis.title.x = element_blank(),
+                  axis.text.x = element_blank(),
+                  legend.position = "none") +  # Hides the legend
+            coord_cartesian(ylim = ylim)
+        
+          # TEMP - prepare spatial plot
+          
+        }
+        
+        
       
       }
       
@@ -879,7 +945,7 @@ plot_power_panel <- function(pp, plot_data_list, output_type, use_effect_size_bi
   
   # format theme elements
   
-  if (use_effect_size_bin) {
+  if (use_category_bins) {
     p <- p + theme_minimal() + labs(x = pp$xlabel, y = pp$ylabel) +
       theme(legend.position = "none", axis.text.y = pp$axis_text_size, axis.text.x = pp$axis_text_size, axis.title = pp$axis_title_size) +
       # scale_fill_manual(values = pp$colors__sample_size$colors, breaks = pp$colors__sample_size$labels) +
@@ -896,9 +962,6 @@ plot_power_panel <- function(pp, plot_data_list, output_type, use_effect_size_bi
       ) +
       theme(axis.text.x = element_text(angle = 45, hjust = 1))   # Rotate x-axis labels
   }
-  
-  
-  
   
   return(p)
   
