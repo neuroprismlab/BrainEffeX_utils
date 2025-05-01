@@ -512,7 +512,11 @@ plot_full_mat <- function(pp, triangle_ordered, ukb = FALSE, mapping_path = NA) 
 
     n_vars <- length(triangle_ordered)
 
-    using_pooling <- pooling_opts[which(possible_lengths == n_vars)]
+    using_pooling <- if (any(possible_lengths == n_vars)) {
+      pooling_opts[which(possible_lengths == n_vars)]
+    } else {
+      FALSE
+    }
     use_diag <- diag_opts[which(possible_lengths == n_vars)]
 
     # get number of rows
