@@ -79,7 +79,7 @@ plot_simci_panel <- function(pp, plot_data_list, meta = FALSE) {
 
     # plot
 
-      if (meta)) {
+      if (meta) {
         # IN PROGRESS: plot everything below below_cross_idx[[1]] in grey
         p <- add_geom_layers(p, plot_df, pp$other_overlap_colors, pp$alpha_line, pp$alpha_ribbon)
       } else {
