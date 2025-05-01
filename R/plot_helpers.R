@@ -782,8 +782,9 @@ get_summary_info <- function(study_details, extra_study_details) {
   # set text
 
   summary_info$bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_estimate, "\n",
-                        "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%")
-
+                                     "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%", "\n",
+                                     "Number of edges/voxels (tests) corrected for: ", extra_study_details$num_tests_corrected)
+  
   if (extra_study_details$grouping_var == 'none') {
 
     summary_info$title_text <- paste0("Dataset: ", study_details$dataset, "   |  ",
