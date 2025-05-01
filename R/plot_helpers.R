@@ -871,8 +871,8 @@ combine_summary_info <- function(summary_info) {
 add_plot_description <- function(p, pp, summary_info, add_extra_text, do_minimal_title) {
 
   # add description-specific plot params
-  pp$title_size <- 21
-  pp$caption_size <- 15
+  pp$title_size <- 25
+  pp$caption_size <- 20
   pp$title_hjust <- 0.5
   pp$title_lmargin <- -6 # adjust it a bit left of the plot y-axis
   pp$caption_hjust <- 0
