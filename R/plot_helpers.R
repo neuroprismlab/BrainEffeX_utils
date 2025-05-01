@@ -35,10 +35,6 @@ plot_simci_panel <- function(pp, plot_data_list) {
   pp$intercept_line_size <- 0.3
   pp$xlabel <- "Edges / Voxels, sorted by effect size"
   pp$ylabel <- "Effect Size"
-  
-  #temporary fix for coloring everything grey
-  pp$non_overlap_colors <- pp$other_overlap_colors
-  pp$overlap_colors <-pp$other_overlap_colors
 
   # little function to simplify plotting
   add_geom_layers <- function(p, data, color, alpha_line, alpha_ribbon) {
