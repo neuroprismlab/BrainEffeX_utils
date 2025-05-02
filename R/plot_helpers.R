@@ -654,7 +654,11 @@ plot_full_mat <- function(pp, triangle_ordered, ukb = FALSE, mapping_path = NA) 
     if (rearrange) {
       full_mat <- full_mat[mapping$oldroi, mapping$oldroi]
     }
-
+    
+    # hack to show colors above the limit
+    # full_mat[full_mat == 0] <- NA
+    full_mat[full_mat > pp$zlim[2]] <- pp$zlim[2]
+    full_mat[full_mat < pp$zlim[1]] <- pp$zlim[1]
 
     # melt the matrix for ggplot
     melted <- melt(full_mat)
