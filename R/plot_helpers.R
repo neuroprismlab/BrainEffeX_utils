@@ -329,6 +329,21 @@ plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
       } else {
         data <- plot_data_list[[i]]$data$estimate
       }
+      
+      if (length(data) == 10) { # need atlas for network-level - currently Shen only - TODO: un-hard-code and pass the actual atlas
+        atlas <- readNIfTI(system.file("data/parcellations/shen_2mm_268_parcellation__in_subnetworks.nii.gz", package = "BrainEffeX.utils"))
+        for (j in 1:10) {
+          atlas@.Data[atlas@.Data == j] <- data[j]
+        }
+        nii <- atlas
+      } else {
+        mask <- plot_data_list[[i]]$extra_study_details$brain_masks$mask
+        nii <- create_nifti(template, data, mask)
+      }
+      
+      if (all(data == 0)) { # need at least one non-zero voxel or plot won't render
+        nii@.Data[1] <- 1
+      }
 
       # set colorbar limits
       if (max(abs(data)) > pp$effect_size_thresh) {
