@@ -329,8 +329,6 @@ plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
       } else {
         data <- plot_data_list[[i]]$data$estimate
       }
-      mask <- plot_data_list[[i]]$extra_study_details$brain_masks$mask
-      nii <- create_nifti(template, data, mask)
 
       # set colorbar limits
       if (max(abs(data)) > pp$effect_size_thresh) {
@@ -345,6 +343,7 @@ plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
       #   pp$zlim_range = pp$rsq_effect_size_limits_smaller
       # }
 
+      # hack to show colors above the limit
       nii[nii == 0] <- NA
       nii[nii > pp$zlim_range[2]] <- pp$zlim_range[2]
       nii[nii < pp$zlim_range[1]] <- pp$zlim_range[1]
@@ -372,6 +371,7 @@ plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
         y = nii,
         crosshairs = FALSE,
         NA.x = TRUE,
+        NA.y = FALSE,
         col.y = col_y,
         xyz = c(pp$xCoord, pp$yCoord, pp$zCoord),
         bg = pp$bg,
@@ -380,8 +380,8 @@ plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
         # clabels = clabels,
         ybreaks = ybreaks,
         ycolorbar = pp$ycolorbar,
-        mfrow = pp$mfrow
-        # zlim = pp$zlim_range
+        mfrow = pp$mfrow,
+        zlim = pp$zlim_range # TODO: check
       )
       
       n_breaks <- 10 # hallee's
@@ -639,6 +639,7 @@ plot_full_mat <- function(pp, triangle_ordered, ukb = FALSE, mapping_path = NA) 
     if (rearrange) {
       full_mat <- full_mat[mapping$oldroi, mapping$oldroi]
     }
+
 
     # melt the matrix for ggplot
     melted <- melt(full_mat)

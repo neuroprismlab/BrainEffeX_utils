@@ -83,12 +83,20 @@ create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd',
     
     p <- plot_density_panel(pp, plot_data_list, use_effect_size_bin = pp$use_effect_size_bin)
     
-  } else if (plot_type == 'spatial') {
+  } else if (grepl('spatial', plot_type)) {
 
-    if (plot_data_list[[1]]$extra_study_details$ref[[1]] == 'voxel') { # TODO: could be
-      p <- plot_activation_panel(pp, plot_data_list)
+    if (grepl('pow_thr', plot_type)) {
+      pp$threshold_category <- "power"
+    } else if (grepl('pow_n_thr', plot_type)) {
+      pp$threshold_category <- "n"
     } else {
-      p <- plot_connectivity_panel(pp, plot_data_list)
+      pp$threshold_category <- NA
+    }
+    
+    if (plot_data_list[[1]]$extra_study_details$ref[[1]] == 'voxel') { # TODO: could be
+      p <- plot_activation_panel(pp, plot_data_list, threshold_category = pp$threshold_category)
+    } else {
+      p <- plot_connectivity_panel(pp, plot_data_list, threshold_category = pp$threshold_category)
     }
 
   } else if (grepl('power', plot_type)) {
@@ -100,12 +108,12 @@ create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd',
     }
     
     if (grepl('binned', plot_type)) {
-      pp$use_effect_size_bin <- TRUE
+      pp$use_category_bins <- TRUE
     } else {
-      pp$use_effect_size_bin <- FALSE
+      pp$use_category_bins <- FALSE
     }
     
-    p <- plot_power_panel(pp, plot_data_list, output_type, use_effect_size_bin = pp$use_effect_size_bin)
+    p <- plot_power_panel(pp, plot_data_list, output_type, use_category_bins = pp$use_category_bins)
   
   } else {
     error('Please specify simci, density, or spatial')
