@@ -42,12 +42,12 @@ plot_output_style <- c('manuscript') # c('shiny', 'manuscript') # 'shiny': save 
 all_effect_size_types <- c('d')              # c('d', 'r_sq', 'd.full_res')
 
 all_motion <- c('regression')  # c('none', 'regression', 'threshold') # TODO: stat_control -> "...regression...$d", full_residualization -> "...regression...$d.full_res"
-all_pooling <- c('none') #  # c('none','net')
+all_pooling <- c('net') #  # c('none','net')
 do_multi <- c(FALSE) # TRUE, FALSE
 
 all_plot_combination_styles <- c('single')   # c('single','meta','overlapping') # note: overlapping can only be used for manuscript
 all_grouping_var <- c('category')          # c('none', 'category', 'orig_stat_type') # used only for meta & overlap plots - TODO: separate out?
-all_manuscript_plot_types <- c('spatial_pow_n_thr')  # c('simci', 'spatial', 'spatial_pow_thr', 'spatial_pow_n_thr', 'density', 'density_binned', 'power', 'power_n','power_binned','power_n_binned') # only used for plot_output_style = 'manuscript'
+all_manuscript_plot_types <- c('spatial')  # c('simci', 'spatial', 'spatial_pow_thr', 'spatial_pow_n_thr', 'density', 'density_binned', 'power', 'power_n','power_binned','power_n_binned') # only used for plot_output_style = 'manuscript'
 
 make_plots <- TRUE
 save_plots <- TRUE
@@ -276,7 +276,7 @@ for (i in 1:length(plot_info$idx)) { # loop over panels - this_study_or_group is
     }
 
     if (do_multi) {
-      mv_combo_name <- names(v$data[[1]])[grepl(mv_combo_basename,names(v$data[[1]]))]
+      mv_combo_name <- names(v$data[[j]])[grepl(mv_combo_basename,names(v$data[[j]]))]
       combo_name <- mv_combo_name
     }
     
