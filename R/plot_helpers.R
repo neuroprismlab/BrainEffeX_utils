@@ -87,7 +87,8 @@ plot_simci_panel <- function(pp, plot_data_list) {
   }
 
   p <- p + labs(x = pp$xlabel, y = pp$ylabel) +
-    scale_y_continuous(limits = pp$ylim) +
+    # scale_y_continuous(limits = pp$ylim) +
+    coord_cartesian(ylim = pp$ylim) +
     theme_classic() +
     theme(axis.line.x = element_blank(), axis.ticks.x = element_blank(), axis.text.x = element_blank(), axis.text.y = pp$axis_text_size, axis.title = pp$axis_title_size)
 
