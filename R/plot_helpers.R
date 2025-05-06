@@ -472,6 +472,7 @@ plot_connectivity_panel <- function(pp, plot_data_list) {
 }
 
 # plot_full_mat <- function(triangle_ordered, pooled = FALSE, ukb = FALSE, mapping_path = NA, save = TRUE, rearrange = TRUE, out_path = 'output', plot_name = 'matrix.png') {
+#' @export
 plot_full_mat <- function(pp, triangle_ordered, ukb = FALSE, mapping_path = NA) {
   # takes an ordered triangle vector (without NAs) and plots the full matrix
 
@@ -629,6 +630,7 @@ plot_full_mat <- function(pp, triangle_ordered, ukb = FALSE, mapping_path = NA) 
 
 #########################################################################
 # Plot power
+#' @export
 plot_power_panel <- function(pp, plot_data_list) {
   
   library(pwr)
@@ -831,7 +833,7 @@ get_summary_info <- function(study_details, extra_study_details) {
 
 #########################################################################
 # Combine summary info if multiple overlapping plots so there's one description per panel
-
+#' @export
 combine_summary_info <- function(summary_info) {
 
   summary_info2 <- list()
