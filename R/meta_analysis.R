@@ -16,7 +16,7 @@
 #' # meta_analysis(v,v$brain_masks, "pooling.none.motion.none.mv.none")
 meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category") {
 
-  testing <- TRUE
+  testing <- FALSE
 
   # libraries & functions
 

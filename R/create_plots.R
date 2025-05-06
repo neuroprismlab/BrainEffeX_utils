@@ -18,7 +18,7 @@
 #' @examples
 #' # Example usage
 #' # create_plots(pd)
-create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd', add_description = FALSE, do_minimal_title = FALSE, summary_info = NULL, meta = FALSE) {
+create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd', do_multivariate = FALSE, add_description = FALSE, do_minimal_title = FALSE, summary_info = NULL, meta = FALSE) {
   
   library(ggplot2)
 
@@ -31,12 +31,30 @@ create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd',
     pp$effect_size_limits_big <- c(-0.25, 0.5)
     pp$effect_size_limits_small <- c(-0.02, 0.1)
     pp$effect_size_limits_smaller <- c(-0.01, 0.05)
-  } else { # using d limits for all other effect types
+    pp$reference_xlimits <- c(0, 0.005)
+    } else { # using d limits for all other effect types
     pp$effect_size_thresh <- 0.5
     pp$effect_size_limits_big <- c(-1.2, 1.2)
     pp$effect_size_limits_small <- c(-0.5, 0.5)
     pp$effect_size_limits_smaller <- c(-0.15, 0.15)
+    pp$reference_xlimits <- c(-0.1, 0.1)
+    }
+  
+  if (do_multivariate) {
+    pp$mv_multiplier <- 20
+    pp$effect_size_limits_big <- pp$effect_size_limits_big * pp$mv_multiplier
+    pp$effect_size_limits_small <- pp$effect_size_limits_small * pp$mv_multiplier
+    pp$effect_size_limits_smaller <- pp$effect_size_limits_smaller * pp$mv_multiplier
   }
+  pp$colors__sample_size <- data.frame(labels = c("<1,000", "1,000-5,000", "5,000-10,000", ">10,000", "NA"), colors = c("#82A651", "#3AB7BE", "#E7786C", "#B873F7","#B59410"), breaks_upper_lim = c(1000, 5000, 10000, 999999999, Inf))
+  
+  # for binning results - TESTING
+  pp$effect_size_bins <- c(0, 0.05, 0.2, 0.5, 0.8, 1.5, 2.5, Inf)
+  pp$effect_size_bin_labels <- c('Extremely Small','Very Small','Small','Medium','Large','Very Large','Extremely Large')
+  pp$power_bins <- c(0,0.2,0.5,0.8,1)
+  pp$power_bin_labels <- c('Very Low','Low','Medium','High')
+  pp$sample_size_bins <- c(0,25,50,100,500,1000,5000,Inf)
+  pp$sample_size_bin_labels <- c('Lab','Lab+','Center','Consortium','Consortium+','Large Consortium','Massive Consortium')
   
   pp$axis_title_size = element_text(size = 22) 
   pp$axis_text_size = element_text(size = 22)
@@ -60,6 +78,10 @@ create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd',
 
     p <- plot_density_panel(pp, plot_data_list)
     # p <- plot_density_panel(plot_data_list)
+    
+  } else if (plot_type == 'density_binned') {
+    
+    p <- plot_density_panel(pp, plot_data_list, use_effect_size_bin = TRUE)
 
   } else if (plot_type == 'spatial') {
 
@@ -69,9 +91,15 @@ create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd',
       p <- plot_connectivity_panel(pp, plot_data_list)
     }
 
-  } else if (plot_type == 'power') {
+  } else if (plot_type == 'power' | plot_type == 'power_n') {
     
-    p <- plot_power_panel(pp, plot_data_list)
+    if (plot_type == 'power_n') {
+      output_type <- 'n'
+    } else {
+      output_type <- 'power'
+    }
+    
+    p <- plot_power_panel(pp, plot_data_list, output_type)
   
   } else {
     error('Please specify simci, density, or spatial')

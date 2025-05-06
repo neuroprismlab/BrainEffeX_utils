@@ -113,7 +113,7 @@ plot_simci_panel <- function(pp, plot_data_list, meta = FALSE) {
 #' @examples
 #' # Example usage
 #' # plot_density_panel(plot_data)
-plot_density_panel <- function(pp, plot_data_list) {
+plot_density_panel <- function(pp, plot_data_list, use_effect_size_bin = FALSE) {
 
   # add density-specific plot params
 
@@ -128,6 +128,11 @@ plot_density_panel <- function(pp, plot_data_list) {
   # make plot object
 
   p <- ggplot()
+  
+  # add grey rectangle in background for reference
+  # p <- p + geom_rect(aes(xmin = pp$reference_xlimits[1], xmax = pp$reference_xlimits[2], ymin = 0, ymax = Inf), fill = "grey", alpha = 0.2)
+  
+  # if (use_effect_size_bin) {
 
   # if plot data list is > 1 entry, set x limits to small
   # if (length(plot_data_list) > 1) {
@@ -139,6 +144,9 @@ plot_density_panel <- function(pp, plot_data_list) {
       # pp$xlim = pp$effect_size_limits_big # big for individual studies
   #   }
   # }
+      # } else {
+      #   pp$xlim <- pp$binned_effect_size_limits
+      # }
       
   # TODO: temporary hack for R^2 limits
   # if ((max(plot_data_list[[1]]$data$estimate,na.rm = TRUE) <= 1.1) && (min(plot_data_list[[1]]$data$estimate,na.rm = TRUE) >= -0.1)) {
@@ -164,6 +172,57 @@ plot_density_panel <- function(pp, plot_data_list) {
                             breaks = c(-Inf, pp$colors__sample_size$breaks_upper_lim),
                             labels = pp$colors__sample_size$labels)
 
+    if (use_effect_size_bin) { # optional: bin effect sizes
+      
+      cons_estimate__binned <- as.numeric(cut(abs(plot_data_list[[i]]$data$cons_estimate), breaks = pp$effect_size_bins, right = FALSE))
+      
+      # manually make counts & normalize
+      cons_estimate_counts <- as.data.frame( table(cons_estimate__binned) )
+      colnames(cons_estimate_counts) <- c("category", "count")
+      cons_estimate_counts$category <- as.numeric(as.character(cons_estimate_counts$category))
+      cons_estimate_counts$count <- cons_estimate_counts$count / sum(cons_estimate_counts$count) # normalize counts
+      
+      # # manually add start and end points at zero
+      # start_point <- data.frame(category = min(cons_estimate_counts$category), count = 0 )
+      # end_point <- data.frame(category = max(cons_estimate_counts$category), count = 0)
+      # cons_estimate_counts <- rbind(start_point, cons_estimate_counts, end_point)
+      
+      if (length(unique(cons_estimate_counts$category)) == 1) {
+        
+        p <- p + geom_col(data = data.frame(x = cons_estimate_counts$category, y = cons_estimate_counts$count, sample_size_category = sample_size_category),
+                          aes(x = x, y = y, fill = sample_size_category), 
+                          width = 0.25, alpha = pp$alpha, color = NA)
+        
+      } else {
+        
+        p <- p + 
+          geom_area(data = data.frame(x = cons_estimate_counts$category, y = cons_estimate_counts$count, sample_size_category = sample_size_category),
+                    aes(x = x, y = y, fill = sample_size_category, color = sample_size_category), 
+                    alpha = pp$alpha * 0.5) +
+          geom_line(data = data.frame(x = cons_estimate_counts$category, y = cons_estimate_counts$count, sample_size_category = sample_size_category),
+                    aes(x = x, y = y, fill = sample_size_category, color = sample_size_category), 
+                    size = pp$size, alpha = pp$alpha)
+      }
+      
+      # older options
+      
+      # p <- p + geom_step(data = data.frame(value = cons_estimate__binned, sample_size_category = sample_size_category),
+      #                         aes(x = value, fill = sample_size_category, color = sample_size_category),
+      #                         size = pp$size, stat = "bin", binwidth = 1)
+      
+      # p <- p + geom_histogram(data = data.frame(value = cons_estimate__binned, sample_size_category = sample_size_category),
+      #                       aes(x = value, fill = sample_size_category, color = sample_size_category),
+      #                       alpha = pp$alpha, size = pp$size, fill = NA, binwidth = 1)
+      
+      # p <- p + geom_density(data = data.frame(value = cons_estimate__binned, sample_size_category = sample_size_category),
+      #                       aes(x = value, fill = sample_size_category, color = sample_size_category),
+      #                       bw = 0.5, alpha = pp$alpha, size = pp$size)
+      
+      # p <- p + geom_bar(data = data.frame(value = cons_estimate__binned, sample_size_category = sample_size_category),
+      #                   aes(x = value, fill = sample_size_category, color = sample_size_category), alpha = pp$alpha, size = pp$size)
+      
+      
+    } else {
 
       if (length(unique(plot_data_list[[i]]$data$cons_estimate)) == 1) {
         p <- p + geom_histogram(data = data.frame(value = plot_data_list[[i]]$data$cons_estimate, sample_size_category = sample_size_category),
@@ -172,14 +231,29 @@ plot_density_panel <- function(pp, plot_data_list) {
         p <- p + geom_density(data = data.frame(value = plot_data_list[[i]]$data$cons_estimate, sample_size_category = sample_size_category),
                           aes(x = value, fill = sample_size_category, color = sample_size_category), alpha = pp$alpha, size = pp$size) # for unique color per study, do: fill = i, color = i
       }
+    }
   }
 
   p <- p + theme_minimal() + labs(x = pp$xlabel, y = pp$ylabel) +
-    xlim(pp$xlim) +
     theme(legend.position = "none", axis.text.y = pp$axis_text_size, axis.text.x = pp$axis_text_size, axis.title = pp$axis_title_size) +
     scale_fill_manual(values = pp$colors__sample_size$colors, breaks = pp$colors__sample_size$labels) +
     scale_color_manual(values = pp$colors__sample_size$colors, breaks = pp$colors__sample_size$labels)
 
+  if (use_effect_size_bin) {
+    # p <- p + scale_x_discrete(limits = c(0,(length(pp$effect_size_bins)-1))) +
+    p <- p +
+      scale_x_continuous(breaks = c(1:(length(pp$effect_size_bins)-1)),
+                         labels = pp$effect_size_bin_labels, # replace x ticks with labels
+                         limits = c(0.5,(length(pp$effect_size_bins)-1)),
+                         guide = guide_axis(check.overlap = FALSE)) +
+      scale_y_continuous(limits = c(0, 1)) +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))   # Rotate x-axis labels
+    
+    
+  } else {
+    p <- p + xlim(pp$xlim)
+  }
+  
   return(p)
 }
 
@@ -543,6 +617,11 @@ plot_full_mat <- function(pp, triangle_ordered, ukb = FALSE, mapping_path = NA) 
     if (rearrange) {
       full_mat <- full_mat[mapping$oldroi, mapping$oldroi]
     }
+    
+    # hack to show colors above the limit
+    # full_mat[full_mat == 0] <- NA
+    full_mat[full_mat > pp$zlim[2]] <- pp$zlim[2]
+    full_mat[full_mat < pp$zlim[1]] <- pp$zlim[1]
 
     # melt the matrix for ggplot
     melted <- melt(full_mat)
@@ -816,7 +895,16 @@ get_summary_info <- function(study_details, extra_study_details) {
                          "Reference Space: ", extra_study_details$ref)
 
     # if field cons_mv_estimate exists in extra_study_details_multi, add to bottom text # TODO: currently not defined when using group_data
-    if ("max_cons_mv_estimate" %in% names(extra_study_details)) {
+    if ("mv_estimate" %in% names(extra_study_details)) { # meta
+      
+      summary_info$bottom_text <- paste0(summary_info$bottom_text,"\n",
+                                         "Multivariate effect size: ", round(extra_study_details$mv_estimate, 2), " [", round(extra_study_details$mv_ci[1], 2), ", ", round(extra_study_details$mv_ci[2], 2), "]")
+      # bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
+      #                       "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%\n",
+      #                       "Multivariate effect size: ", round(extra_study_details$mv_estimate, 2), " [", round(extra_study_details$mv_ci[1], 2), ", ", round(extra_study_details$mv_ci[2], 2), "]")
+      
+    } else if ("max_cons_mv_estimate" %in% names(extra_study_details)) { # overlapping
+      
       summary_info$bottom_text <- paste0(summary_info$bottom_text,"\n",
                             "Max conservative multivariate effect size: ", round(extra_study_details$max_cons_mv_estimate, 2))
       # bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
