@@ -52,6 +52,9 @@ if (!any(is.nan(data[[combo_name]][[estimate]]))) { # check if data exists
   sorted_upper_bounds_whole <- data[[combo_name]][[ci_ub]][sorted_indices]
   sorted_lower_bounds_whole <- data[[combo_name]][[ci_lb]][sorted_indices]
 
+  # save the number of tests being corrected for (aka number of edges/voxels)
+  num_tests = length(sorted_upper_bounds_whole)
+  
   # downsample data for plotting
   downsample <- length(sorted_indices) %/% 100
 
