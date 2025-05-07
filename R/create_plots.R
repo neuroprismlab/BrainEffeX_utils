@@ -18,7 +18,7 @@
 #' @examples
 #' # Example usage
 #' # create_plots(pd)
-create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd', do_multivariate = FALSE, add_description = FALSE, do_minimal_title = FALSE, summary_info = NULL) {
+create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd', do_multivariate = FALSE, add_description = FALSE, do_minimal_title = FALSE, summary_info = NULL, meta = FALSE) {
   
   library(ggplot2)
 
@@ -55,8 +55,8 @@ create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd',
   pp$sample_size_bins <- c(0, 25, 50, 100, 500, 1000, 5000, Inf)
   pp$sample_size_bin_labels <- c('Lab','Lab+','Center','Consortium','Consortium+','Large Consortium','Massive Consortium')
   
-  pp$axis_title_size = element_text(size = 16) 
-  pp$axis_text_size = element_text(size = 16)
+  pp$axis_title_size = element_text(size = 22) 
+  pp$axis_text_size = element_text(size = 22)
 
   # General setup
 
@@ -70,7 +70,7 @@ create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd',
   # par(mar=pp$mar)
   if (plot_type == 'simci') {
 
-    p <- plot_simci_panel(pp, plot_data_list)
+    p <- plot_simci_panel(pp, plot_data_list, meta)
     # p <- plot_simci_panel(plot_data_list)
 
   } else if (grepl('density', plot_type)) {

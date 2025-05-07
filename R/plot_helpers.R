@@ -21,7 +21,7 @@
 #' @examples
 #' # Example usage
 #' # plot_simci_panel(plot_data)
-plot_simci_panel <- function(pp, plot_data_list) {
+plot_simci_panel <- function(pp, plot_data_list, meta = FALSE) {
 
   # add simci-specific plot params
   pp$non_overlap_colors <- "#4ECDC4"
@@ -76,7 +76,7 @@ plot_simci_panel <- function(pp, plot_data_list) {
 
     # plot
 
-      if ((length(below_cross_idx) > 1) || (length(above_cross_idx) > 1)) {
+      if (meta) {
         # IN PROGRESS: plot everything below below_cross_idx[[1]] in grey
         p <- add_geom_layers(p, plot_df, pp$other_overlap_colors, pp$alpha_line, pp$alpha_ribbon)
       } else {
@@ -1030,11 +1030,13 @@ get_summary_info <- function(study_details, extra_study_details) {
 
     # if field cons_mv_estimate exists in extra_study_details_multi, add to bottom text
     if ("mv_estimate" %in% names(extra_study_details)) {
-      summary_info$bottom_text <- paste0(summary_info$bottom_text,"\n",
-                            "Multivariate effect size: ", round(extra_study_details$mv_estimate, 2), " [", round(extra_study_details$mv_ci[1], 2), ", ", round(extra_study_details$mv_ci[2], 2), "]")
-      # bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
-      #                       "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%\n",
-      #                       "Multivariate effect size: ", round(extra_study_details$mv_estimate, 2), " [", round(extra_study_details$mv_ci[1], 2), ", ", round(extra_study_details$mv_ci[2], 2), "]")
+      if (!is.null(extra_study_details$mv_estimate)) {
+        summary_info$bottom_text <- paste0(summary_info$bottom_text,"\n",
+                              "Multivariate effect size: ", round(extra_study_details$mv_estimate, 2), " [", round(extra_study_details$mv_ci[1], 2), ", ", round(extra_study_details$mv_ci[2], 2), "]")
+        # bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
+        #                       "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%\n",
+        #                       "Multivariate effect size: ", round(extra_study_details$mv_estimate, 2), " [", round(extra_study_details$mv_ci[1], 2), ", ", round(extra_study_details$mv_ci[2], 2), "]")
+      }
     }
 
   } else {
@@ -1045,13 +1047,13 @@ get_summary_info <- function(study_details, extra_study_details) {
     # if field cons_mv_estimate exists in extra_study_details_multi, add to bottom text # TODO: currently not defined when using group_data
     
     if ("mv_estimate" %in% names(extra_study_details)) { # meta
-      
+      if (!is.null(extra_study_details$mv_estimate)) {
       summary_info$bottom_text <- paste0(summary_info$bottom_text,"\n",
                              "Multivariate effect size: ", round(extra_study_details$mv_estimate, 2), " [", round(extra_study_details$mv_ci[1], 2), ", ", round(extra_study_details$mv_ci[2], 2), "]")
       # bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
       #                       "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%\n",
       #                       "Multivariate effect size: ", round(extra_study_details$mv_estimate, 2), " [", round(extra_study_details$mv_ci[1], 2), ", ", round(extra_study_details$mv_ci[2], 2), "]")
-    
+      }
     } else if ("max_cons_mv_estimate" %in% names(extra_study_details)) { # overlapping
       
       summary_info$bottom_text <- paste0(summary_info$bottom_text,"\n",
