@@ -439,12 +439,14 @@ plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
 }
 
 # read nifti template file (for hcp studies specifically)
+#' @export
 create_nifti_template <- function(sample_nifti_path = 'data/EMOTION_cope3_GroupSize482_dcoeff.nii.gz', out_path = 'data/') {
   template <- readNIfTI(sample_nifti_path, read_data = FALSE)
   writeNIfTI(template, paste0(out_path, 'template_nifti'))
 }
 
 # create a nifti file from a template and study name
+#' @export
 create_nifti <- function(nifti_template, data, mask) {
   # INPUTS:
   # - nifti_template: loaded nifti file to set all meta-data/other nifti info on
@@ -463,7 +465,7 @@ create_nifti <- function(nifti_template, data, mask) {
 # custom colorbar function (bc bug in coloring and size of ortho2)
 # mostly copied from https://github.com/muschellij2/neurobase/blob/master/R/ortho2.R
 # changed text color and added text.size
-
+#' @export
 colorbar_custom <- function(breaks, #the minimum and maximum z values for which 
                             # colors should be plotted (see \code{\link{image}})
                             col, # a list of colors (see \code{\link{image}})
@@ -585,6 +587,7 @@ plot_connectivity_panel <- function(pp, plot_data_list, threshold_category = NA)
 }
 
 # plot_full_mat <- function(triangle_ordered, pooled = FALSE, ukb = FALSE, mapping_path = NA, save = TRUE, rearrange = TRUE, out_path = 'output', plot_name = 'matrix.png') {
+#' @export
 plot_full_mat <- function(pp, triangle_ordered, ukb = FALSE, mapping_path = NA) {
   # takes an ordered triangle vector (without NAs) and plots the full matrix
 
@@ -747,6 +750,7 @@ plot_full_mat <- function(pp, triangle_ordered, ukb = FALSE, mapping_path = NA) 
 
 #########################################################################
 # Plot power
+#' @export
 plot_power_panel <- function(pp, plot_data_list, output_type, use_category_bins = FALSE, do_spatial_plot = FALSE) {
   
   library(pwr)
@@ -1075,7 +1079,7 @@ get_summary_info <- function(study_details, extra_study_details) {
 
 #########################################################################
 # Combine summary info if multiple overlapping plots so there's one description per panel
-
+#' @export
 combine_summary_info <- function(summary_info) {
 
   summary_info2 <- list()

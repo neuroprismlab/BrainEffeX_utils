@@ -4,7 +4,7 @@
 \alias{plot_density_panel}
 \title{Function: Plot Densities}
 \usage{
-plot_density_panel(pp, plot_data_list)
+plot_density_panel(pp, plot_data_list, use_effect_size_bin = FALSE)
 }
 \arguments{
 \item{pp}{A list of plot parameters}

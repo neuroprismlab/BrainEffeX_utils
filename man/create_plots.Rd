@@ -7,10 +7,12 @@
 create_plots(
   plot_data_list,
   plot_type = "simci",
+  effect_type = "d",
+  do_multivariate = FALSE,
   add_description = FALSE,
-  save = FALSE,
-  out_path = "output",
-  file_name = "plot"
+  do_minimal_title = FALSE,
+  summary_info = NULL,
+  meta = FALSE
 )
 }
 \arguments{
@@ -28,11 +30,7 @@ create_plots(
 
 \item{add_description}{Logical; whether to add a description to the plot. Default is \code{FALSE}.}
 
-\item{save}{Logical; whether to save the plot as a PNG file. Default is \code{FALSE}.}
-
-\item{out_path}{A string specifying the output directory for saving plots. Default is "output".}
-
-\item{file_name}{A string for the saved file name. Default is "plot".}
+\item{do_minimal_title}{Logical; whether to shorten title. Default is \code{FALSE}.}
 }
 \value{
 A plot visualizing effect sizes and simulated CIs.
