@@ -304,7 +304,7 @@ plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
   # pp$col_y <- colorspace::diverge_hsv(pp$ncol)
   # pp$n_colorbar_ticks <- 5
   pp$ycolorbar <- TRUE
-  pp$colorbar_text_size <- 0.9
+  pp$colorbar_text_size <- 2
   pp$mfrow <- c(1,3) #c(3, 1)
   pp$xCoord <- 30
   pp$yCoord <- 30
