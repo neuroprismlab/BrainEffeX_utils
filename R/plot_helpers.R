@@ -1019,7 +1019,8 @@ get_summary_info <- function(study_details, extra_study_details) {
   # set text
 
   summary_info$bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_estimate, "\n",
-                        "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%")
+                        "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%", "\n",
+                        "Number of edges/voxels (tests) corrected for: ", extra_study_details$num_tests_corrected)
 
   if (extra_study_details$grouping_var == 'none') {
 
@@ -1115,7 +1116,7 @@ add_plot_description <- function(p, pp, summary_info, add_extra_text, do_minimal
 
   # add description-specific plot params
   pp$title_size <- 21
-  pp$caption_size <- 15
+  pp$caption_size <- 17
   pp$title_hjust <- 0.5
   pp$title_lmargin <- -6 # adjust it a bit left of the plot y-axis
   pp$caption_hjust <- 0
