@@ -480,7 +480,7 @@ colorbar_custom <- function(breaks, #the minimum and maximum z values for which
     par(starting.par.settings)
   })
   mai <- par("mai")
-  mai[4] <- max(mai[4], 2)
+  mai[4] <- max(mai[4], 1.7)
   fin <- par("fin")
   rat = mai[4]/fin[1]
   rat = max(rat, 1 - maxleft)
