@@ -304,7 +304,7 @@ plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
   # pp$col_y <- colorspace::diverge_hsv(pp$ncol)
   # pp$n_colorbar_ticks <- 5
   pp$ycolorbar <- FALSE
-  pp$colorbar_text_size <- 1.2
+  pp$colorbar_text_size <- 1.8
   pp$mfrow <- c(1,3) #c(3, 1)
   pp$xCoord <- 30
   pp$yCoord <- 30
@@ -370,7 +370,7 @@ plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
       # p <- grid.grabExpr({
 
       if (pp$do_static_figs) {
-        png("ortho_tmp.png", width = 800, height = 800)
+        png("ortho_tmp.png", width = 1100, height = 800)
       }
       
       # hallee's
@@ -381,7 +381,7 @@ plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
       ybreaks <- seq(pp$zlim_range[1], pp$zlim_range[2], length.out = n_breaks)
       col_y <- colorspace::diverge_hsv(n_breaks-1) # previously pp$col_y
       
-      
+      #par(mar = c(0,0,0,3))
       ortho2(
         x = nii,
         y = nii,
@@ -397,7 +397,9 @@ plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
         ybreaks = ybreaks,
         ycolorbar = pp$ycolorbar,
         mfrow = pp$mfrow,
-        zlim = pp$zlim_range # TODO: check
+        zlim = pp$zlim_range, # TODO: check
+        #mar = c(0,0,0,0),
+        oma = c(0,0,0,8)
       )
       
       n_breaks <- 10 # hallee's
@@ -480,7 +482,7 @@ colorbar_custom <- function(breaks, #the minimum and maximum z values for which
     par(starting.par.settings)
   })
   mai <- par("mai")
-  mai[4] <- max(mai[4], 1.7)
+  mai[4] <- max(mai[4], 1.2)
   fin <- par("fin")
   rat = mai[4]/fin[1]
   rat = max(rat, 1 - maxleft)
