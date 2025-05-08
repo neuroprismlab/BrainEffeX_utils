@@ -303,7 +303,7 @@ plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
   pp$ncolors <- 40 # also controls number of ticks on colorbar
   # pp$col_y <- colorspace::diverge_hsv(pp$ncol)
   # pp$n_colorbar_ticks <- 5
-  pp$ycolorbar <- TRUE
+  pp$ycolorbar <- FALSE
   pp$colorbar_text_size <- 1.2
   pp$mfrow <- c(1,3) #c(3, 1)
   pp$xCoord <- 30
