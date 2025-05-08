@@ -304,7 +304,7 @@ plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
   # pp$col_y <- colorspace::diverge_hsv(pp$ncol)
   # pp$n_colorbar_ticks <- 5
   pp$ycolorbar <- TRUE
-  pp$colorbar_text_size <- 1.4
+  pp$colorbar_text_size <- 1.2
   pp$mfrow <- c(1,3) #c(3, 1)
   pp$xCoord <- 30
   pp$yCoord <- 30
@@ -480,7 +480,7 @@ colorbar_custom <- function(breaks, #the minimum and maximum z values for which
     par(starting.par.settings)
   })
   mai <- par("mai")
-  mai[4] <- max(mai[4], 1.5)
+  mai[4] <- max(mai[4], 1.7)
   fin <- par("fin")
   rat = mai[4]/fin[1]
   rat = max(rat, 1 - maxleft)
