@@ -239,82 +239,83 @@ rm(plot_info__idx, plot_info__grouping_var, plot_info__group_level, plot_info__r
 
 ## Make Plots
 
-panel_list <- list() # list of panels
-panel_list_2 <- list() # list of panels
-
-panel_list <-list()
-log_list <- list() # list of logs
-
-for (i in 1:length(plot_info$idx)) { # loop over panels - this_study_or_group is the name of the group or study
-
-  this_study_or_group <- rownames(plot_info)[i]
-  this_plot_info <- plot_info[this_study_or_group,]
-
-  pd_list <- list() # list of plot info for single panel
-  pd_list_2 <- list() # add'l list of plot info for plot type to add to pd_list
-  ld_list <- list() # list of log info for single panel
-
-  n_studies_in_pd_list <- 1
-
-  # 1. Prep
-
-  for (j in plot_info$idx[[i]]) {
-
-    # change metadata based on whether using meta-analysis
-
-    if (plot_combination_style == 'meta') {
-
-      data <- v[[meta_str]]$data[[j]]
-      study_details <- list()
-      brain_masks <- v[[meta_str]]$brain_masks[[j]]$pooling.none.motion.none.mv.none # TODO: this is because we explicitly set this for meta but not for single studies - assuming motion type shouldn't affect the mask and always using an external mask for pooling
-
-    } else {
-
-      data <- v$data[[j]]
-      study_details <- v$study[j, ]
-      brain_masks <- v$brain_masks[[j]]
-    }
-
-    if (do_multi) {
-      mv_combo_name <- names(v$data[[j]])[grepl(mv_combo_basename,names(v$data[[j]]))]
-      combo_name <- mv_combo_name
-    }
-    
-    if (combo_name %in% names(data)) { # if combo_name exists in data (e.g., not all studies have net)
-      if (any(!is.na(data[[combo_name]][[effect_size_type]])) > 0) {  # data is not just NA
-
-      # prep
-
-      
-      if (plot_type == 'simci-spatial') { # shiny
-        
-        pd_list[[n_studies_in_pd_list]] <- prep_data_for_plot(data = data, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_basename, estimate = effect_size_type, plot_info = this_plot_info)
-        # pd_list_2[[n_studies_in_pd_list]] <- prep_data_for_spatial_plot(data = data, brain_masks = brain_masks, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_basename, estimate = effect_size_type, plot_info = this_plot_info)
-        pd_list_2[[n_studies_in_pd_list]] <- prep_data_for_plot(data = data, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_basename, estimate = effect_size_type, plot_info = this_plot_info, prep_spatial = TRUE, brain_masks = brain_masks)
-        
-      } else if (grepl('spatial', plot_type)) {
-        
-        # TODO: finally combined prep for spatial with general prep. test more thoroughly for orig spatial and remove
-        # pd_list[[n_studies_in_pd_list]] <- prep_data_for_spatial_plot(data = data, brain_masks = brain_masks, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_basename, estimate = effect_size_type, plot_info = this_plot_info)
-        pd_list[[n_studies_in_pd_list]] <- prep_data_for_plot(data = data, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_basename, estimate = effect_size_type, plot_info = this_plot_info, prep_spatial = TRUE, brain_masks = brain_masks)
-      
+if (make_plots) {
+  
+  panel_list <- list() # list of panels
+  panel_list_2 <- list() # list of panels
+  
+  panel_list <-list()
+  log_list <- list() # list of logs
+  
+  for (i in 1:length(plot_info$idx)) { # loop over panels - this_study_or_group is the name of the group or study
+  
+    this_study_or_group <- rownames(plot_info)[i]
+    this_plot_info <- plot_info[this_study_or_group,]
+  
+    pd_list <- list() # list of plot info for single panel
+    pd_list_2 <- list() # add'l list of plot info for plot type to add to pd_list
+    ld_list <- list() # list of log info for single panel
+  
+    n_studies_in_pd_list <- 1
+  
+    # 1. Prep
+  
+    for (j in plot_info$idx[[i]]) {
+  
+      # change metadata based on whether using meta-analysis
+  
+      if (plot_combination_style == 'meta') {
+  
+        data <- v[[meta_str]]$data[[j]]
+        study_details <- list()
+        brain_masks <- v[[meta_str]]$brain_masks[[j]]$pooling.none.motion.none.mv.none # TODO: this is because we explicitly set this for meta but not for single studies - assuming motion type shouldn't affect the mask and always using an external mask for pooling
+  
       } else {
-      
-        pd_list[[n_studies_in_pd_list]] <- prep_data_for_plot(data = data, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_basename, estimate = effect_size_type, plot_info = this_plot_info)
-     
+  
+        data <- v$data[[j]]
+        study_details <- v$study[j, ]
+        brain_masks <- v$brain_masks[[j]]
       }
-
-      ld_list[[n_studies_in_pd_list]] <- get_summary_info(pd_list[[n_studies_in_pd_list]]$study_details, pd_list[[n_studies_in_pd_list]]$extra_study_details)
-      n_studies_in_pd_list <- n_studies_in_pd_list + 1
-
+  
+      if (do_multi) {
+        mv_combo_name <- names(v$data[[j]])[grepl(mv_combo_basename,names(v$data[[j]]))]
+        combo_name <- mv_combo_name
+      }
+      
+      if (combo_name %in% names(data)) { # if combo_name exists in data (e.g., not all studies have net)
+        if (any(!is.na(data[[combo_name]][[effect_size_type]])) > 0) {  # data is not just NA
+  
+        # prep
+  
+        
+        if (plot_type == 'simci-spatial') { # shiny
+          
+          pd_list[[n_studies_in_pd_list]] <- prep_data_for_plot(data = data, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_basename, estimate = effect_size_type, plot_info = this_plot_info)
+          # pd_list_2[[n_studies_in_pd_list]] <- prep_data_for_spatial_plot(data = data, brain_masks = brain_masks, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_basename, estimate = effect_size_type, plot_info = this_plot_info)
+          pd_list_2[[n_studies_in_pd_list]] <- prep_data_for_plot(data = data, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_basename, estimate = effect_size_type, plot_info = this_plot_info, prep_spatial = TRUE, brain_masks = brain_masks)
+          
+        } else if (grepl('spatial', plot_type)) {
+          
+          # TODO: finally combined prep for spatial with general prep. test more thoroughly for orig spatial and remove
+          # pd_list[[n_studies_in_pd_list]] <- prep_data_for_spatial_plot(data = data, brain_masks = brain_masks, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_basename, estimate = effect_size_type, plot_info = this_plot_info)
+          pd_list[[n_studies_in_pd_list]] <- prep_data_for_plot(data = data, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_basename, estimate = effect_size_type, plot_info = this_plot_info, prep_spatial = TRUE, brain_masks = brain_masks)
+        
+        } else {
+        
+          pd_list[[n_studies_in_pd_list]] <- prep_data_for_plot(data = data, study_details = study_details, combo_name = combo_name, mv_combo_name = mv_combo_basename, estimate = effect_size_type, plot_info = this_plot_info)
+       
+        }
+  
+        ld_list[[n_studies_in_pd_list]] <- get_summary_info(pd_list[[n_studies_in_pd_list]]$study_details, pd_list[[n_studies_in_pd_list]]$extra_study_details)
+        n_studies_in_pd_list <- n_studies_in_pd_list + 1
+  
+        }
       }
     }
-  }
-
-
-  # 2. Plot & Log
-
-  if (make_plots) {
+  
+  
+    # 2. Plot & Log
+  
     if (length(pd_list) > 0) { # plot only if pd_list isn't empty
 
       # set up plot
@@ -336,12 +337,10 @@ for (i in 1:length(plot_info$idx)) { # loop over panels - this_study_or_group is
       }
       
     }
+  
   }
 
-}
 
-
-if (make_plots) {
 
   # General plot parameters
   # TODO: figure out what we want to set up here vs. to pass or set up in
@@ -399,7 +398,6 @@ if (make_plots) {
     if (!dir.exists(actual_dir)) {
       dir.create(actual_dir, recursive = TRUE)
     }
-    cat("Saving plots to...\n", out_basename, "\n", sep = "")
   }
   
 
@@ -439,8 +437,11 @@ if (make_plots) {
     multi_plot <- ggarrange(plotlist = panel_list, ncol=pp$ncol, nrow=pp$row)
     
     if (save_plots) {
-      
+
       plot_fn <- paste0(out_basename, '.png')
+      
+      cat("Saving plots to...\n", plot_fn, "\n", sep = "")
+      
       ggsave(plot_fn, plot = multi_plot, width = pp$width_per_panel * pp$ncol, height = pp$height_per_panel * pp$nrow, units = pp$units, dpi = pp$res, bg = "white", device = "png", limitsize = FALSE)
       
       if (save_logs) { # TODO: some logs are identical - see about saving only single
