@@ -14,11 +14,11 @@ library(devtools) # for installing/loading utils
 
 # Option 1. simple add local scripts to path (for dev):
 base_dir <- "/Users/stephanienoble/Library/CloudStorage/GoogleDrive-s.noble@northeastern.edu/My Drive"
-utils_package_local <- paste0(base_dir,"/Lab/xMore/Software/scripts/R/myscripts/effect_size/misc/BrainEffeX_utils/")
+utils_package_local <- paste0(base_dir,"/Lab/xMore/Software/scripts/R/myscripts/effect_size/BrainEffeX_utils/")
 load_all(utils_package_local)
 
 # Option 2. full install of local package (for dev):
-# utils_package_local <- paste0(base_dir,"/xMore/Software/scripts/R/myscripts/effect_size/misc/BrainEffeX_utils/")
+# utils_package_local <- paste0(base_dir,"/xMore/Software/scripts/R/myscripts/effect_size/BrainEffeX_utils/")
 # install(utils_package_local)
 # library(BrainEffeX.utils)
 
