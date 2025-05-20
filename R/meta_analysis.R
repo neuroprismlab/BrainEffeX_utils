@@ -78,7 +78,17 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
       if (length(matching_idx__study) > 0) {
         
         this_meta_label <- paste0(level, "_reference_", ref) # label to refer to this meta-analysis by name
-
+        
+        print(paste0("- ", this_meta_label))
+        
+        # if (this_label %in% names(v[[meta_str]]$data)) {
+        if (!grepl("cognitive", this_meta_label)) {
+          
+          # warning(paste0("Data for ", this_label, " already exists. Skipping..."))
+          print(paste0("  Skipping. Only doing category"))
+          
+        } else {
+        
         matching_names <- v$study$name[matching_idx__study]
         matching_idx__data <- which(toupper(names(v$data)) %in% toupper(matching_names))
         # idx of the studies in d that match the current stat and ref
@@ -203,8 +213,9 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
 
           it <- 1
           for (this_study in matching_idx__data) {
-
+            
             if (grepl("multi", combo_name)) {
+              combo_name_orig <- combo_name
               combo_name <- names(v$data[[this_study]])[grepl(combo_name_orig, names(v$data[[this_study]]))] # because some are "multi" and some "multi.r" - TODO: check - previous version somehow changed mv.none to mv.multi - check
             }
             
@@ -413,6 +424,7 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
         v[[meta_str]]$brain_masks[[this_meta_label]][[combo_name]]$mask <- intersection_mask
         v[[meta_str]]$brain_masks[[this_meta_label]][[combo_name]]$mask_type <- "intersection"
 
+        } 
       }
     }
   }
