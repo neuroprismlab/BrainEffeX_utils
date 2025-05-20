@@ -76,6 +76,8 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
       matching_idx__study <- which(v$study[[grouping_var]] == level & v$study$ref == ref) # TODO: maybe explicitly add map type here
 
       if (length(matching_idx__study) > 0) {
+        
+        this_meta_label <- paste0(level, "_reference_", ref) # label to refer to this meta-analysis by name
 
         matching_names <- v$study$name[matching_idx__study]
         matching_idx__data <- which(toupper(names(v$data)) %in% toupper(matching_names))
@@ -390,26 +392,26 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
           combo_name <- combo_name_orig
         }
         
-        v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$d <- d__group
-        # v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$se <- d_se__group
+        v[[meta_str]]$data[[this_meta_label]][[combo_name]]$d <- d__group
+        # v[[meta_str]]$data[[this_meta_label]][[combo_name]]$se <- d_se__group
 
-        v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$r_sq <- r_sq__group
-        # v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$r_sq_se <- r_sq_se__group
+        v[[meta_str]]$data[[this_meta_label]][[combo_name]]$r_sq <- r_sq__group
+        # v[[meta_str]]$data[[this_meta_label]][[combo_name]]$r_sq_se <- r_sq_se__group
 
-        v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$sim_ci_lb <- d_sim_ci_lb__group
-        v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$sim_ci_ub <- d_sim_ci_ub__group
-        v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$r_sq_sim_ci_lb <- r_sq_sim_ci_lb__group
-        v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$r_sq_sim_ci_ub <- r_sq_sim_ci_ub__group
+        v[[meta_str]]$data[[this_meta_label]][[combo_name]]$sim_ci_lb <- d_sim_ci_lb__group
+        v[[meta_str]]$data[[this_meta_label]][[combo_name]]$sim_ci_ub <- d_sim_ci_ub__group
+        v[[meta_str]]$data[[this_meta_label]][[combo_name]]$r_sq_sim_ci_lb <- r_sq_sim_ci_lb__group
+        v[[meta_str]]$data[[this_meta_label]][[combo_name]]$r_sq_sim_ci_ub <- r_sq_sim_ci_ub__group
 
         # store the study info in the study_stat dataframe
 
-        v[[meta_str]]$study <- rbind(v[[meta_str]]$study, data.frame(group_level = level, ref = ref, name = paste0(level, "_reference_", ref)))
+        v[[meta_str]]$study <- rbind(v[[meta_str]]$study, data.frame(group_level = level, ref = ref, name = this_meta_label))
 
         # store intersection masks
 
         # TODO: pass this up through plotter for visualization
-        v[[meta_str]]$brain_masks[[paste0(level, "_reference_", ref)]][[combo_name]]$mask <- intersection_mask
-        v[[meta_str]]$brain_masks[[this_label]][[combo_name]]$mask_type <- "intersection"
+        v[[meta_str]]$brain_masks[[this_meta_label]][[combo_name]]$mask <- intersection_mask
+        v[[meta_str]]$brain_masks[[this_meta_label]][[combo_name]]$mask_type <- "intersection"
 
       }
     }
