@@ -83,33 +83,48 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
 
         # get intersection of all masks
 
-        intersection_mask <- brain_masks[[v$study$name[matching_idx__study[1]]]]$mask
-        for (this_study in matching_idx__data) {
-
-          if (v$study$map_type[matching_idx__study[1]] == "fc") {
-
-            # TEMP mask flipper - TODO: we make sure everything is upper tri in calc_gl . Fix the masks accordingly there, then remove this next part
-            triangle_type <- which_triangle(brain_masks[[v$study$name[this_study]]]$mask)
-            switch(triangle_type,
-                   # "upper" = leave as is
-                   "lower" = { # transpose
-                     warning("Data is upper triangular but mask is lower triangular.")
-                     brain_masks[[v$study$name[this_study]]]$mask <- t(brain_masks[[v$study$name[this_study]]]$mask)
-                   },
-                   "both" = { # remove lower
-                     warning("Data should be upper triangular but contains entries on both sides of diagonal.")
-                     # v$data[[this_study]][[combo_name]]$d[lower.tri(v$data[[this_study]][[combo_name]]$d)] <- 0
-                     brain_masks[[v$study$name[this_study]]]$mask[lower.tri(brain_masks[[v$study$name[this_study]]]$mask)] <- 0
-                   },
-                   "no_data" = { # remove this data
-                     warning("Mask suggests no data exists.")
-                     # v$data[[this_study]][[combo_name]]$d <- NULL
-                     # v$study$name[this_study]]]$mask[lower.tri(brain_masks[[v$study$name[this_study]]]$mask <- NULL
-                   }
-                  # TODO: check if there are too few entries in mask (e.g., <75%)
-              )
+        if (grepl("net", combo_name) | grepl("mv.multi", combo_name)) {
+          
+          # Make mask from data
+          template_combo_name <- names(v$data[[1]])[grepl(combo_name, names(v$data[[1]]))] # mv combo_names change
+          intersection_mask <- rep(TRUE, length(v$data[[matching_idx__study[1]]][[template_combo_name]]$d))
+          if (length(intersection_mask) == 0) {
+            intersection_mask <- TRUE
           }
-          intersection_mask <- intersection_mask & brain_masks[[v$study$name[this_study]]]$mask
+          
+        } else {
+          
+          # Get existing edge- / voxel-level mask
+        
+          intersection_mask <- brain_masks[[v$study$name[matching_idx__study[1]]]]$mask
+          for (this_study in matching_idx__data) {
+
+            if (v$study$map_type[this_study] == "fc") {
+  
+              # TEMP mask flipper - TODO: we make sure everything is upper tri in calc_gl . Fix the masks accordingly there, then remove this next part
+              triangle_type <- which_triangle(brain_masks[[v$study$name[this_study]]]$mask)
+              switch(triangle_type,
+                     # "upper" = leave as is
+                     "lower" = { # transpose
+                       warning("Data is upper triangular but mask is lower triangular.")
+                       brain_masks[[v$study$name[this_study]]]$mask <- t(brain_masks[[v$study$name[this_study]]]$mask)
+                     },
+                     "both" = { # remove lower
+                       warning("Data should be upper triangular but contains entries on both sides of diagonal.")
+                       # v$data[[this_study]][[combo_name]]$d[lower.tri(v$data[[this_study]][[combo_name]]$d)] <- 0
+                       brain_masks[[v$study$name[this_study]]]$mask[lower.tri(brain_masks[[v$study$name[this_study]]]$mask)] <- 0
+                     },
+                     "no_data" = { # remove this data
+                       warning("Mask suggests no data exists.")
+                       # v$data[[this_study]][[combo_name]]$d <- NULL
+                       # v$study$name[this_study]]]$mask[lower.tri(brain_masks[[v$study$name[this_study]]]$mask <- NULL
+                     }
+                    # TODO: check if there are too few entries in mask (e.g., <75%)
+                )
+            }
+            
+            intersection_mask <- intersection_mask & brain_masks[[v$study$name[this_study]]]$mask
+          }
         }
 
 
@@ -133,6 +148,11 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
           # get individual study effect size, sample size, & ci's
 
           this_study <- matching_idx__data[1]
+          
+          if (grepl("multi",combo_name)) {
+            combo_name_orig <- combo_name
+            combo_name <- names(v$data[[this_study]])[grepl(combo_name_orig, names(v$data[[this_study]]))] # because some are "multi" and some "multi.r" - TODO: check - previous version somehow changed mv.none to mv.multi - check
+          }
 
           # set up n's for se calc
 
@@ -165,11 +185,7 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
 
           # preallocate to store data across studies
 
-          if (v$study$map_type[matching_idx__data[1]] == "act") {
-            n_vars_intersection <- sum(intersection_mask)
-          } else {
-            n_vars_intersection <- sum(intersection_mask)
-          }
+          n_vars_intersection <- sum(intersection_mask)
 
           d__all <- matrix(NA, nrow = n_vars_intersection, ncol = length(matching_idx__data))
           d_sim_ci_ub__all <- d__all
@@ -186,6 +202,10 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
           it <- 1
           for (this_study in matching_idx__data) {
 
+            if (grepl("multi", combo_name)) {
+              combo_name <- names(v$data[[this_study]])[grepl(combo_name_orig, names(v$data[[this_study]]))] # because some are "multi" and some "multi.r" - TODO: check - previous version somehow changed mv.none to mv.multi - check
+            }
+            
             # get n's
 
             this_n_total <- as.numeric(v$data[[this_study]][[combo_name]]$n[1])
@@ -215,8 +235,12 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
             #   but only has 1's where effects exist across studies (i.e., where there are 1's in intersection_mask)
             #   -> this lets us grab effects only where they exist across studies
 
-            d_mask <- brain_masks[[v$study$name[this_study]]]$mask
-            mask_of_masks <- intersection_mask[d_mask == 1]
+            if (grepl("net", combo_name) | grepl("multi", combo_name)) {
+              mask_of_masks <- intersection_mask
+            } else {
+              d_mask <- brain_masks[[v$study$name[this_study]]]$mask
+              mask_of_masks <- intersection_mask[d_mask == 1]
+            }
 
             this_d <- this_d[mask_of_masks]
             this_d_sim_ci_lb <- this_d_sim_ci_lb[mask_of_masks]
@@ -362,6 +386,10 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
 
         # store d_avg, sim_ci_lb_avg, and sim_ci_ub_avg in data_group list as a list
 
+        if (grepl("multi",combo_name)) {
+          combo_name <- combo_name_orig
+        }
+        
         v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$d <- d__group
         # v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$se <- d_se__group
 
@@ -381,6 +409,7 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
 
         # TODO: pass this up through plotter for visualization
         v[[meta_str]]$brain_masks[[paste0(level, "_reference_", ref)]][[combo_name]]$mask <- intersection_mask
+        v[[meta_str]]$brain_masks[[this_label]][[combo_name]]$mask_type <- "intersection"
 
       }
     }
