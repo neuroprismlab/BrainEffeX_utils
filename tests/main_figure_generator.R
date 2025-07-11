@@ -162,81 +162,81 @@ if (run_meta) {
 
 if (make_plots) {
   
-## Set up unique identifiers for each plot
-
-plot_info__idx <- list() # each row = list of study(s) in data to include in each plot
-# for single plots: each row = 1 entry per study to index into v$data
-# for meta-analysis plots: each row = 1 entry per category to index v[[meta_str]]$data
-# for overlapping plots: each row = list of indices per group (x map type) to index into v$data
-
-plot_info__grouping_var <- list() # each row = grouping variable (same value repeated for each plot)
-plot_info__group_level <- list() # each row = level within grouping variable
-plot_info__ref <- list() # each row = ref(s) used for a study or grouping variable
-
-if (plot_combination_style == 'single') {  # name by study
-
-  all_study_names <- names(v$data)
-
-  for (i in 1:length(v$data)) {
-    plot_info__idx[[all_study_names[[i]]]] <- i
-    plot_info__grouping_var[[all_study_names[[i]]]] <- "none"  # overwrite any other grouping var if doing single plots
-    plot_info__group_level[[all_study_names[[i]]]] <- NA
-    plot_info__ref[[all_study_names[[i]]]] <- v$study$ref[i]
-  }
-  cat("Warning: grouping_var set to 'none' for single plots\n")
-
-
-  # sort all rows of plot_info__idx by orig_stat_type, with studies sharing same stat type next to each other
-  if (rearrange_by_stat_type) {
-    orig_stat_type_order <- c(which(v$study$orig_stat_type == 'r'), which(v$study$orig_stat_type == 't2'), which(v$study$orig_stat_type == 't'))
-    plot_info__idx <- plot_info__idx[orig_stat_type_order]
-    plot_info__grouping_var <- plot_info__grouping_var[orig_stat_type_order]
-    plot_info__group_level <- plot_info__group_level[orig_stat_type_order]
-    plot_info__ref <- plot_info__ref[orig_stat_type_order]
-  }
-
-
-} else if (plot_combination_style == 'meta') { # name by average of grouping var
-
-  for (i in 1:length(v[[meta_str]]$data)) {
-    plot_info__idx[[names(v[[meta_str]]$data)[[i]]]] <- i
-    plot_info__grouping_var[[names(v[[meta_str]]$data)[[i]]]] <- grouping_var
-    plot_info__group_level[[names(v[[meta_str]]$data)[[i]]]] <- v[[meta_str]]$study$group_level[i]
-    plot_info__ref[[names(v[[meta_str]]$data)[[i]]]] <- v[[meta_str]]$study$ref[i]
-  }
-
-} else if (plot_combination_style == 'overlapping') { # overlapping individual plots
-
-  if (grouping_var == 'category') {
-    study_group_name <- v$study$category
-  } else if (grouping_var == 'orig_stat_type') {
-    study_group_name <- v$study$orig_stat_type
-  }
-
-  all_group_names <- unique(study_group_name)
-  all_map_types <- unique(v$study$map_type)
-
-  for (this_map_type in all_map_types) {
-    for (this_group_name in all_group_names) {
-      idx <- which(study_group_name == this_group_name & v$study$map_type == this_map_type)
-      plot_info__idx[[paste0(this_group_name, '.', this_map_type)]] <- idx
-      plot_info__grouping_var[[paste0(this_group_name, '.', this_map_type)]] <- grouping_var
-      plot_info__group_level[[paste0(this_group_name, '.', this_map_type)]] <- this_group_name
-      plot_info__ref[[paste0(this_group_name, '.', this_map_type)]] <- unique(v$study$ref[idx])
+  ## Set up unique identifiers for each plot
+  
+  plot_info__idx <- list() # each row = list of study(s) in data to include in each plot
+  # for single plots: each row = 1 entry per study to index into v$data
+  # for meta-analysis plots: each row = 1 entry per category to index v[[meta_str]]$data
+  # for overlapping plots: each row = list of indices per group (x map type) to index into v$data
+  
+  plot_info__grouping_var <- list() # each row = grouping variable (same value repeated for each plot)
+  plot_info__group_level <- list() # each row = level within grouping variable
+  plot_info__ref <- list() # each row = ref(s) used for a study or grouping variable
+  
+  if (plot_combination_style == 'single') {  # name by study
+  
+    all_study_names <- names(v$data)
+  
+    for (i in 1:length(v$data)) {
+      plot_info__idx[[all_study_names[[i]]]] <- i
+      plot_info__grouping_var[[all_study_names[[i]]]] <- "none"  # overwrite any other grouping var if doing single plots
+      plot_info__group_level[[all_study_names[[i]]]] <- NA
+      plot_info__ref[[all_study_names[[i]]]] <- v$study$ref[i]
+    }
+    cat("Warning: grouping_var set to 'none' for single plots\n")
+  
+  
+    # sort all rows of plot_info__idx by orig_stat_type, with studies sharing same stat type next to each other
+    if (rearrange_by_stat_type) {
+      orig_stat_type_order <- c(which(v$study$orig_stat_type == 'r'), which(v$study$orig_stat_type == 't2'), which(v$study$orig_stat_type == 't'))
+      plot_info__idx <- plot_info__idx[orig_stat_type_order]
+      plot_info__grouping_var <- plot_info__grouping_var[orig_stat_type_order]
+      plot_info__group_level <- plot_info__group_level[orig_stat_type_order]
+      plot_info__ref <- plot_info__ref[orig_stat_type_order]
+    }
+  
+  
+  } else if (plot_combination_style == 'meta') { # name by average of grouping var
+  
+    for (i in 1:length(v[[meta_str]]$data)) {
+      plot_info__idx[[names(v[[meta_str]]$data)[[i]]]] <- i
+      plot_info__grouping_var[[names(v[[meta_str]]$data)[[i]]]] <- grouping_var
+      plot_info__group_level[[names(v[[meta_str]]$data)[[i]]]] <- v[[meta_str]]$study$group_level[i]
+      plot_info__ref[[names(v[[meta_str]]$data)[[i]]]] <- v[[meta_str]]$study$ref[i]
+    }
+  
+  } else if (plot_combination_style == 'overlapping') { # overlapping individual plots
+  
+    if (grouping_var == 'category') {
+      study_group_name <- v$study$category
+    } else if (grouping_var == 'orig_stat_type') {
+      study_group_name <- v$study$orig_stat_type
+    }
+  
+    all_group_names <- unique(study_group_name)
+    all_map_types <- unique(v$study$map_type)
+  
+    for (this_map_type in all_map_types) {
+      for (this_group_name in all_group_names) {
+        idx <- which(study_group_name == this_group_name & v$study$map_type == this_map_type)
+        plot_info__idx[[paste0(this_group_name, '.', this_map_type)]] <- idx
+        plot_info__grouping_var[[paste0(this_group_name, '.', this_map_type)]] <- grouping_var
+        plot_info__group_level[[paste0(this_group_name, '.', this_map_type)]] <- this_group_name
+        plot_info__ref[[paste0(this_group_name, '.', this_map_type)]] <- unique(v$study$ref[idx])
+      }
     }
   }
-}
-
-plot_info <- data.frame(
-  idx = I(plot_info__idx),
-  grouping_var = unlist(plot_info__grouping_var),
-  group_level = unlist(plot_info__group_level),
-  ref = I(plot_info__ref),
-  row.names = names(plot_info__idx),
-  stringsAsFactors = FALSE
-)
-rm(plot_info__idx, plot_info__grouping_var, plot_info__group_level, plot_info__ref)
-
+  
+  plot_info <- data.frame(
+    idx = I(plot_info__idx),
+    grouping_var = unlist(plot_info__grouping_var),
+    group_level = unlist(plot_info__group_level),
+    ref = I(plot_info__ref),
+    row.names = names(plot_info__idx),
+    stringsAsFactors = FALSE
+  )
+  rm(plot_info__idx, plot_info__grouping_var, plot_info__group_level, plot_info__ref)
+  ## Print plot info
 
 
   ## Make Plots
