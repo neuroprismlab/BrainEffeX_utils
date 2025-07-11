@@ -151,9 +151,8 @@ if (plot_combination_style == 'meta') {
 }
 
 if (run_meta) {
-  mv_combo_name <- names(v$data[[1]])[grepl(mv_combo_basename,names(v$data[[1]]))]
-  # v <- meta_analysis(v, v$brain_masks, combo_name, grouping_var = grouping_var)
-  v <- meta_analysis(v, v$brain_masks, mv_combo_name, grouping_var = grouping_var) # add multivariate
+  v <- meta_analysis(v, v$brain_masks, combo_name, grouping_var = grouping_var)
+  v <- meta_analysis(v, v$brain_masks, mv_combo_basename, grouping_var = grouping_var) # add multivariate
   save(v, file = meta_fn)
 }
 

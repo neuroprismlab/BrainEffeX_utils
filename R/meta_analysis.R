@@ -190,6 +190,11 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
           r_sq_se__group <- r_sq_se(r_sq__group, n = this_n_total)
 
           print("- single")
+          
+          if (grepl("multi",combo_name)) {
+            # go back to the original multivariate combo basename
+            combo_name <- combo_name_orig
+          }
 
         } else { # META-ANALYSIS:
 
@@ -215,6 +220,7 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
           for (this_study in matching_idx__data) {
             
             if (grepl("multi", combo_name)) {
+              # update since the multivariate combo names change for each study - thus we pass a basename for multi
               combo_name_orig <- combo_name
               combo_name <- names(v$data[[this_study]])[grepl(combo_name_orig, names(v$data[[this_study]]))] # because some are "multi" and some "multi.r" - TODO: check - previous version somehow changed mv.none to mv.multi - check
             }
@@ -279,6 +285,11 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
             r_sq_se__all[, it] <- this_r_sq_se
 
             it <- it + 1
+            
+            if (grepl("multi",combo_name)) {
+              # go back to the original multivariate combo basename
+              combo_name <- combo_name_orig
+            }
 
           }
 
@@ -398,10 +409,6 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
         }
 
         # store d_avg, sim_ci_lb_avg, and sim_ci_ub_avg in data_group list as a list
-
-        if (grepl("multi",combo_name)) {
-          combo_name <- combo_name_orig
-        }
         
         v[[meta_str]]$data[[this_meta_label]][[combo_name]]$d <- d__group
         # v[[meta_str]]$data[[this_meta_label]][[combo_name]]$se <- d_se__group
