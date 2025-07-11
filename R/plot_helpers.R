@@ -764,9 +764,6 @@ plot_power_panel <- function(pp, plot_data_list, output_type, use_category_bins 
   pp$y_big <- 10000 # TODO: need better solution
   pp$thresholded_sizes <- c(1, 5)
   pp$thresholded_colors <- c("red", "black")
-  
-  this_type <- "two.sample"
-  message("TESTING: assuming two-sample t-test for power calculation.")
 
   if (output_type == "power") {
     pp$xlabel <- "Power"
@@ -832,16 +829,12 @@ plot_power_panel <- function(pp, plot_data_list, output_type, use_category_bins 
       
       # get power # TODO: two-sample only for testing
       
-      # if (plot_data_list[[i]]$study_details$orig_stat_type == "t") {
       # infer whether one sample or two sample
-      # if test component 2 is empty, it's one sample
-      # if (plot_data_list[[i]]$study_details$test_component_2 == "") {
-      #   this_type <- "one.sample"
-      # } else {
-      #     this_type <- "two.sample"
-      #   }
-      # } else {
-      # }
+      # if t and test component 2 is empty, it's one sample
+      this_type <- "two.sample"
+      if ( plot_data_list[[i]]$study_details$orig_stat_type == 't' && is.null(plot_data_list[[i]]$study_details$test_component_2) ) {
+          this_type <- "one.sample"
+      }
       
       y <- numeric(length(plot_data_list[[i]]$data$cons_estimate))
       
