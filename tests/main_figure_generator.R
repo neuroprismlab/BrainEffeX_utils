@@ -159,6 +159,9 @@ if (run_meta) {
 
 
 
+
+if (make_plots) {
+  
 ## Set up unique identifiers for each plot
 
 plot_info__idx <- list() # each row = list of study(s) in data to include in each plot
@@ -236,9 +239,7 @@ rm(plot_info__idx, plot_info__grouping_var, plot_info__group_level, plot_info__r
 
 
 
-## Make Plots
-
-if (make_plots) {
+  ## Make Plots
   
   panel_list <- list() # list of panels
   panel_list_2 <- list() # list of panels
