@@ -200,7 +200,7 @@ if (!any(is.nan(data[[combo_name]][[estimate]]))) { # check if data exists
   
   # add masks if spatial
   if (prep_spatial) {
-    if (is.na(brain_masks)) {
+    if (length(brain_masks) == 1 && is.na(brain_masks)) {
       stop("prep_spatial is TRUE but brain_masks is NA. Please provide a valid brain_masks data frame.")
     }
     plot_data$extra_study_details$brain_masks <- brain_masks
