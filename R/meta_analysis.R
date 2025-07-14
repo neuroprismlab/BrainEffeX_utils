@@ -56,7 +56,7 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
 
 
   # initialize vars for storing grouping results
-  # if data_group doesn't exist, create
+  # only create if data_group doesn't exist
   meta_str <- paste0('meta_',grouping_var)
   if (!(meta_str %in% names(v))) {
     v[[meta_str]] <- list()
@@ -81,11 +81,13 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
         
         print(paste0("- ", this_meta_label))
         
-        # if (this_label %in% names(v[[meta_str]]$data)) {
-        if (!grepl("cognitive", this_meta_label)) {
+        # if (!grepl("cognitive", this_meta_label)) {
+        # if (!grepl("", this_meta_label)) {  # do everything
+        # print(paste0("  (Skipping - only doing ", specific_category, ")"))
+        
+        if (this_label %in% names(v[[meta_str]]$data)) {
           
-          # warning(paste0("Data for ", this_label, " already exists. Skipping..."))
-          print(paste0("  Skipping. Only doing category"))
+          warning(paste0("(Data for ", this_label, " already exists. Skipping...)"))
           
         } else {
         
@@ -292,8 +294,7 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
             }
 
           }
-
-
+          
 
           # 2. Meta analysis
 
@@ -329,6 +330,8 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
 
             } else { # meta-analysis
 
+              optimizers <- c("nlminb", "Nelder-Mead", "BFGS", "bobyqa","nloptr","nlm","hjk") # TODO: check how often this is needed
+              
               # For d: do meta only if not empty or NA; otherwise set NA
 
               if (length(d__all[this_variable,]) == 0 || length(d_se__all[this_variable,]) == 0 || all(is.na(d__all[this_variable,])) || all(is.na(d_se__all[this_variable,]))) {
@@ -339,9 +342,22 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
               } else { # do meta
 
                 d_meta_analysis <- NULL
-                d_meta_analysis <- rma.uni(yi = d__all[this_variable,], se = d_se__all[this_variable,], method = c("REML","DL"), level = ci_level) # added alternative closed form method in case REML doesn't converge
+                # d_meta_analysis <- rma.uni(yi = d__all[this_variable,], se = d_se__all[this_variable,], method = c("REML","DL"), level = ci_level) # added alternative closed form method in case REML doesn't converge
                 # d_meta_analysis <- rma.uni(yi = d__all[this_variable,], se = d_se__all[this_variable,], method = "REML", control=list(stepadj=0.5, maxiter=1000)) # added control to help with convergence
-
+                
+                # nested by dataset
+                df <- data.frame(yi = d__all[this_variable,], vi = d_se__all[this_variable,]^2, dataset = v$study$dataset[matching_idx__study], name = v$study$name[matching_idx__study])
+                # d_meta_analysis <- rma.mv(yi = yi, V = vi, data = df, slab = dataset, level = ci_level, random = ~1 | dataset / name) # https://bookdown.org/MathiasHarrer/Doing_Meta_Analysis_in_R/multilevel-ma.html # added alternative closed form method in case REML doesn't converge
+                for (opt in optimizers) {
+                  d_meta_analysis <- tryCatch(
+                    rma.mv(yi = yi, V = vi, data = df, slab = dataset, level = ci_level, random = ~1 | dataset / name, control=list(optimizer=opt)), # https://bookdown.org/MathiasHarrer/Doing_Meta_Analysis_in_R/multilevel-ma.html # added alternative closed form method in case REML doesn't converge
+                    error = function(e) NULL                           
+                  )
+                  if (!is.null(d_meta_analysis)) {
+                    break
+                  }
+                }
+                
                 d__group[this_variable] <- d_meta_analysis$b
 
                 # this_ci <- confint(d_meta_analysis, level = ci_level)
@@ -361,8 +377,20 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
               } else {
 
                 r_sq_meta_analysis <- NULL
-                r_sq_meta_analysis <- rma.uni(yi = r_sq__all[this_variable,], se = r_sq_se__all[this_variable,], method = c("REML","DL"), level = ci_level) # added alternative closed form method in case REML doesn't converge
+                # r_sq_meta_analysis <- rma.uni(yi = r_sq__all[this_variable,], se = r_sq_se__all[this_variable,], method = c("REML","DL"), level = ci_level) # added alternative closed form method in case REML doesn't converge
                 # r_sq_meta_analysis <- rma.uni(yi = r_sq__all[this_variable,], se = r_sq_se__all[this_variable,], method = "REML", control=list(stepadj=0.5, maxiter=1000))
+
+                # nested by dataset
+                df <- data.frame(yi = r_sq__all[this_variable,], vi = r_sq_se__all[this_variable,]^2, dataset = v$study$dataset[matching_idx__study], name = v$study$name[matching_idx__study])
+                for (opt in optimizers) {
+                  r_sq_meta_analysis <- tryCatch(
+                    rma.mv(yi = yi, V = vi, data = df, slab = dataset, level = ci_level, random = ~1 | dataset / name, control=list(optimizer=opt)), # https://bookdown.org/MathiasHarrer/Doing_Meta_Analysis_in_R/multilevel-ma.html # added alternative closed form method in case REML doesn't converge
+                    error = function(e) NULL                           
+                  )
+                  if (!is.null(r_sq_meta_analysis)) {
+                    break
+                  }
+                }
 
                 r_sq__group[this_variable] <- r_sq_meta_analysis$b
 
