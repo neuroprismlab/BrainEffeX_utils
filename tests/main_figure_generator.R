@@ -370,15 +370,19 @@ if (make_plots) {
   pp$res <- 100
   pp$units <- "in"
   pp$title_size <- 20
-  if (plot_type == 'simci-spatial') {
+  if (plot_type == 'simci-spatial') { # shiny
     pp$ncol <- 2
     pp$nrow <- 1
-  } else if (plot_type == 'power' | plot_type == 'power_n') {
-    pp$ncol <- length(panel_list)
-    pp$nrow <- 1
   } else {
-    pp$ncol <- 1
-    pp$nrow <- length(panel_list)
+    # remove nulls
+    panel_list <- panel_list[!sapply(panel_list,is.null)]
+      if (plot_type == 'power' | plot_type == 'power_n') {
+      pp$ncol <- length(panel_list)
+      pp$nrow <- 1
+    } else {
+      pp$ncol <- 1
+      pp$nrow <- length(panel_list)
+    }
   }
   if (plot_output_style == 'manuscript') {
     do_minimal_title <- TRUE
