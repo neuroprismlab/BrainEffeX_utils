@@ -43,7 +43,7 @@ all_effect_size_types <- c('d')              # c('d', 'r_sq', 'd.full_res')
 
 all_motion <- c('regression')  # c('none', 'regression', 'threshold') # TODO: stat_control -> "...regression...$d", full_residualization -> "...regression...$d.full_res"
 all_pooling <- c('net') #  # c('none','net')
-do_multi <- c(FALSE) # TRUE, FALSE
+plot_multi <- c(FALSE) # TRUE, FALSE
 
 all_plot_combination_styles <- c('single')   # c('single','meta','overlapping') # note: overlapping can only be used for manuscript
 all_grouping_var <- c('category')          # c('none', 'category', 'orig_stat_type') # used only for meta & overlap plots - TODO: separate out?
@@ -277,7 +277,7 @@ if (make_plots) {
         brain_masks <- v$brain_masks[[j]]
       }
   
-      if (do_multi) {
+      if (plot_multi) {
         mv_combo_name <- names(v$data[[j]])[grepl(mv_combo_basename,names(v$data[[j]]))]
         combo_name <- mv_combo_name
       }
@@ -327,12 +327,12 @@ if (make_plots) {
 
       if (plot_type == 'simci-spatial') {
         
-        panel_list[[i]] <- create_plots(pd_list, plot_type = 'simci', effect_type = effect_size_type, do_multivariate = do_multi, add_description = add_plt_description, do_minimal_title = use_minimal_title, log_list[[i]])
-        panel_list_2[[i]] <- create_plots(pd_list_2, plot_type = 'spatial', effect_type = effect_size_type, do_multivariate = do_multi,add_description = add_plt_description, do_minimal_title = use_minimal_title, log_list[[i]])
+        panel_list[[i]] <- create_plots(pd_list, plot_type = 'simci', effect_type = effect_size_type, do_multivariate = plot_multi, add_description = add_plt_description, do_minimal_title = use_minimal_title, log_list[[i]])
+        panel_list_2[[i]] <- create_plots(pd_list_2, plot_type = 'spatial', effect_type = effect_size_type, do_multivariate = plot_multi,add_description = add_plt_description, do_minimal_title = use_minimal_title, log_list[[i]])
       
       } else {
         
-        panel_list[[i]] <- create_plots(pd_list, plot_type = plot_type, effect_type = effect_size_type, do_multivariate = do_multi,add_description = add_plt_description, do_minimal_title = use_minimal_title, log_list[[i]])
+        panel_list[[i]] <- create_plots(pd_list, plot_type = plot_type, effect_type = effect_size_type, do_multivariate = plot_multi,add_description = add_plt_description, do_minimal_title = use_minimal_title, log_list[[i]])
       
       }
       
@@ -378,7 +378,7 @@ if (make_plots) {
       grouping_var_str <- ''
     }
     
-    if (do_multi) {
+    if (plot_multi) {
       multi_str <- 'mv_'
     } else {
       multi_str <- ''
