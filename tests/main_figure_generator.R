@@ -52,7 +52,11 @@ all_manuscript_plot_types <- c('spatial')  # c('simci', 'spatial', 'spatial_pow_
 make_plots <- TRUE
 save_plots <- TRUE
 # save_logs <- FALSE
-rearrange_by_stat_type <- TRUE # for single plots
+
+# reorder_by_grouping_var <- TRUE # for single plots - force to always be true
+grouping_var_order <- NULL
+grouping_var_order$orig_stat_type <- c('r','t2','t')
+grouping_var_order$category <- c('cognitive','cognitive (task)','psychiatric','biometric','sex (demographic)','age (demographic)')
 
 # special settings for shiny vs. manuscript
 
@@ -186,14 +190,18 @@ if (make_plots) {
     cat("Warning: grouping_var set to 'none' for single plots\n")
   
   
-    # sort all rows of plot_info__idx by orig_stat_type, with studies sharing same stat type next to each other
-    if (rearrange_by_stat_type) {
-      orig_stat_type_order <- c(which(v$study$orig_stat_type == 'r'), which(v$study$orig_stat_type == 't2'), which(v$study$orig_stat_type == 't'))
-      plot_info__idx <- plot_info__idx[orig_stat_type_order]
-      plot_info__grouping_var <- plot_info__grouping_var[orig_stat_type_order]
-      plot_info__group_level <- plot_info__group_level[orig_stat_type_order]
-      plot_info__ref <- plot_info__ref[orig_stat_type_order]
-    }
+    # sort all rows of plot_info__idx by specified group order (studies in the same group next to each other)
+    # if (reorder_by_grouping_var) {
+      idx_reorder <- NULL
+      for (j in 1:length(grouping_var_order[[grouping_var]])) {
+        idx_reorder <- c(idx_reorder, which(v$study[[grouping_var]] == grouping_var_order[[grouping_var]][j]))
+      }
+      # idx_reorder <- c(which(v$study$orig_stat_type == 'r'), which(v$study$orig_stat_type == 't2'), which(v$study$orig_stat_type == 't'))
+      plot_info__idx <- plot_info__idx[idx_reorder]
+      plot_info__grouping_var <- plot_info__grouping_var[idx_reorder]
+      plot_info__group_level <- plot_info__group_level[idx_reorder]
+      plot_info__ref <- plot_info__ref[idx_reorder]
+    # }
   
   
   } else if (plot_combination_style == 'meta') { # name by average of grouping var
@@ -204,6 +212,14 @@ if (make_plots) {
       plot_info__group_level[[names(v[[meta_str]]$data)[[i]]]] <- v[[meta_str]]$study$group_level[i]
       plot_info__ref[[names(v[[meta_str]]$data)[[i]]]] <- v[[meta_str]]$study$ref[i]
     }
+    
+    # sort all rows of plot_info__idx by specified group order (studies in the same group next to each other)
+    idx_reorder <- order(match(v[[meta_str]]$study$group_level,grouping_var_order[[grouping_var]]))
+    plot_info__idx <- plot_info__idx[idx_reorder]
+    plot_info__grouping_var <- plot_info__grouping_var[idx_reorder]
+    plot_info__group_level <- plot_info__group_level[idx_reorder]
+    plot_info__ref <- plot_info__ref[idx_reorder]
+    
   
   } else if (plot_combination_style == 'overlapping') { # overlapping individual plots
   
@@ -213,11 +229,12 @@ if (make_plots) {
       study_group_name <- v$study$orig_stat_type
     }
   
-    all_group_names <- unique(study_group_name)
+    # sort existing groups by specified group order
+    all_group_names <- grouping_var_order[[grouping_var]][grouping_var_order[[grouping_var]] %in% unique(study_group_name)]
     all_map_types <- unique(v$study$map_type)
   
-    for (this_map_type in all_map_types) {
-      for (this_group_name in all_group_names) {
+    for (this_group_name in all_group_names) {
+      for (this_map_type in all_map_types) {
         idx <- which(study_group_name == this_group_name & v$study$map_type == this_map_type)
         plot_info__idx[[paste0(this_group_name, '.', this_map_type)]] <- idx
         plot_info__grouping_var[[paste0(this_group_name, '.', this_map_type)]] <- grouping_var
