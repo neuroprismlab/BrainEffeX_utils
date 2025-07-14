@@ -434,7 +434,7 @@ if (make_plots) {
     
   } else {
     
-    multi_plot <- ggarrange(plotlist = panel_list, ncol=pp$ncol, nrow=pp$row)
+    multi_plot <- ggarrange(plotlist = panel_list, ncol=pp$ncol, nrow=pp$nrow)
     
     if (save_plots) {
 
