@@ -7,10 +7,11 @@
 create_plots(
   plot_data_list,
   plot_type = "simci",
+  effect_type = "d",
+  do_multivariate = FALSE,
   add_description = FALSE,
-  save = FALSE,
-  out_path = "output",
-  file_name = "plot"
+  do_minimal_title = FALSE,
+  summary_info = NULL
 )
 }
 \arguments{
@@ -26,13 +27,15 @@ create_plots(
 
 \item{plot_type}{String; which plot type to make. Options are 'density' or 'simci'. Default is "simci".}
 
+\item{effect_type}{A string to specify the effect size estimate: "d" or "r_sq"}
+
+\item{do_multivariate}{Logical; whether to apply multivariate multiplier. Default is FALSE.}
+
 \item{add_description}{Logical; whether to add a description to the plot. Default is \code{FALSE}.}
 
-\item{save}{Logical; whether to save the plot as a PNG file. Default is \code{FALSE}.}
+\item{do_minimal_title}{Logical; whether to shorten title. Default is \code{FALSE}.}
 
-\item{out_path}{A string specifying the output directory for saving plots. Default is "output".}
-
-\item{file_name}{A string for the saved file name. Default is "plot".}
+\item{summary_info}{A list containing summary information for plot descriptions}
 }
 \value{
 A plot visualizing effect sizes and simulated CIs.
@@ -42,6 +45,6 @@ This function is the master plotter for making effect size plots for individual
 studies, overlapping studies, or meta-analytic results.
 }
 \examples{
-# Example usage
-# create_plots(pd)
+Example usage
+create_plots(pd)
 }

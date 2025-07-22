@@ -8,14 +8,18 @@
 #' @param mv_combo_name A string specifying the multivariate combo to plot.
 #' @param estimate A string to specify the effect size estimate: "d" or "r_sq"
 #' @param plot_info A list containing extra plot information (group_var, level, and reference atlas)
+#' @param prep_spatial Logical; whether to prepare data for spatial plotting. Default is FALSE.
+#' @param brain_masks A list containing brain mask information for spatial plotting
 #'
 #' @return A plot visualizing effect sizes and simulated CIs.
 #' @export
 #'
 #' @examples
 #' Example usage
-#' pd <- prep_data_for_plot(data = v$data[[i]], study_details = v$study[i, ], plot_info$grouping_var='none',
-#'              combo_name = "pooling.none.motion.none.mv.none", mv_combo_name = "pooling.none.motion.none.mv.multi")
+#' pd <- prep_data_for_plot(data = v$data[[i]], study_details = v$study[i, ], 
+#' plot_info$grouping_var='none', 
+#' combo_name = "pooling.none.motion.none.mv.none", 
+#' mv_combo_name = "pooling.none.motion.none.mv.multi")
 prep_data_for_plot <- function(data, study_details, combo_name, mv_combo_name, estimate = 'd', plot_info = 'NA', prep_spatial = FALSE, brain_masks = NA) {
 
 

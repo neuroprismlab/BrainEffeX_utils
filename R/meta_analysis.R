@@ -2,41 +2,24 @@
 #'
 #' This function plots effect sizes (Cohen's d or R-squared) and simulated confidence intervals (CIs)
 #' for a given dataset. It allows optional grouping, visualization, and file saving.
-#'
+#' @import metafor
+#' @importFrom metafor rma.mv
 #' @param v A list containing effect size data
 #' @param brain_masks A list containing the brain masks
 #' @param combo_name A string specifying the combo to plot - # TODO: note: in app, this is saved directly in v
-#' @param group_by A string to specify grouping: "orig_stat_type" or "category"
+#' @param grouping_var A string to specify grouping: "orig_stat_type" or "category"
 #'
 #' @return An updated list with the grouped_by data
 #' @export
 #'
 #' @examples
-#' # Example usage
-#' # meta_analysis(v,v$brain_masks, "pooling.none.motion.none.mv.none")
+#' Example usage
+#' meta_analysis(v,v$brain_masks, "pooling.none.motion.none.mv.none")
 meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category") {
 
   testing <- FALSE
 
-  # libraries & functions
-
-  library(metafor)
-
   # helpers
-
-  which_triangle <- function(mat) {
-    if (!is.matrix(mat)) stop("Input must be a matrix")
-
-    is_upper <- all(mat[lower.tri(mat)] == 0)
-    is_lower <- all(mat[upper.tri(mat)] == 0)
-    # note: we do not care about checking for diagonal (this function does not include diagonal)
-
-    if (is_upper && is_lower) { return("both")
-    } else if (is_upper) { return("upper")
-    } else if (is_lower) { return("lower")
-    } else { return("no_data")
-    }
-  }
 
   d_se <- function(d, n1, n2 = NULL) {
     if (is.null(n2)) { # one-sample
@@ -54,6 +37,43 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
     return(se)
   }
 
+  if (!is.list(v)) {
+    stop("v must be a list")
+  }
+  
+  if (!"study" %in% names(v)) {
+    stop("v must contain a 'study' component")
+  }
+  
+  if (!"data" %in% names(v)) {
+    stop("v must contain a 'data' component")
+  }
+  
+  if (!is.data.frame(v$study)) {
+    stop("v$study must be a data frame")
+  }
+  
+  if (!is.list(v$data)) {
+    stop("v$data must be a list")
+  }
+  
+  if (!grouping_var %in% names(v$study)) {
+    stop("grouping_var '", grouping_var, "' not found in v$study columns")
+  }
+  
+  if (length(v$data) == 0) {
+    stop("v$data is empty")
+  }
+  
+  # Check if combo_name exists in at least one study
+  combo_exists <- any(sapply(v$data, function(study_data) {
+    combo_name %in% names(study_data) || 
+      any(grepl(combo_name, names(study_data)))
+  }))
+  
+  if (!combo_exists) {
+    stop("combo_name '", combo_name, "' not found in any study data")
+  }
 
   # initialize vars for storing grouping results
   # only create if data_group doesn't exist
@@ -85,11 +105,7 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
         # if (!grepl("", this_meta_label)) {  # do everything
         # print(paste0("  (Skipping - only doing ", specific_category, ")"))
         
-        if (this_label %in% names(v[[meta_str]]$data)) {
-          
-          warning(paste0("(Data for ", this_label, " already exists. Skipping...)"))
-          
-        } else {
+        
         
         matching_names <- v$study$name[matching_idx__study]
         matching_idx__data <- which(toupper(names(v$data)) %in% toupper(matching_names))
@@ -112,31 +128,6 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
         
           intersection_mask <- brain_masks[[v$study$name[matching_idx__study[1]]]]$mask
           for (this_study in matching_idx__data) {
-
-            if (v$study$map_type[this_study] == "fc") {
-  
-              # TEMP mask flipper - TODO: we make sure everything is upper tri in calc_gl . Fix the masks accordingly there, then remove this next part
-              triangle_type <- which_triangle(brain_masks[[v$study$name[this_study]]]$mask)
-              switch(triangle_type,
-                     # "upper" = leave as is
-                     "lower" = { # transpose
-                       warning("Data is upper triangular but mask is lower triangular.")
-                       brain_masks[[v$study$name[this_study]]]$mask <- t(brain_masks[[v$study$name[this_study]]]$mask)
-                     },
-                     "both" = { # remove lower
-                       warning("Data should be upper triangular but contains entries on both sides of diagonal.")
-                       # v$data[[this_study]][[combo_name]]$d[lower.tri(v$data[[this_study]][[combo_name]]$d)] <- 0
-                       brain_masks[[v$study$name[this_study]]]$mask[lower.tri(brain_masks[[v$study$name[this_study]]]$mask)] <- 0
-                     },
-                     "no_data" = { # remove this data
-                       warning("Mask suggests no data exists.")
-                       # v$data[[this_study]][[combo_name]]$d <- NULL
-                       # v$study$name[this_study]]]$mask[lower.tri(brain_masks[[v$study$name[this_study]]]$mask <- NULL
-                     }
-                    # TODO: check if there are too few entries in mask (e.g., <75%)
-                )
-            }
-            
             intersection_mask <- intersection_mask & brain_masks[[v$study$name[this_study]]]$mask
           }
         }
@@ -459,7 +450,7 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
         v[[meta_str]]$brain_masks[[this_meta_label]][[combo_name]]$mask <- intersection_mask
         v[[meta_str]]$brain_masks[[this_meta_label]][[combo_name]]$mask_type <- "intersection"
 
-        } 
+        
       }
     }
   }

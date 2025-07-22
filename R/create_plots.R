@@ -2,7 +2,8 @@
 #'
 #' This function is the master plotter for making effect size plots for individual
 #' studies, overlapping studies, or meta-analytic results.
-#'
+#' @import ggplot2
+#' @importFrom ggplot2 element_text
 #' @param plot_data_list A list of lists containing effect size data for plotting:
 #'  - plot_data_list[i] = `plot_data`: contains:
 #'    - `data`: A list containing sorted & downsampled effect size data & helpers: estimate, cons_estimate, lb, ub, below_cross_idx, and above_cross_idx
@@ -11,16 +12,17 @@
 #' @param plot_type String; which plot type to make. Options are 'density' or 'simci'. Default is "simci".
 #' @param add_description Logical; whether to add a description to the plot. Default is `FALSE`.
 #' @param do_minimal_title Logical; whether to shorten title. Default is `FALSE`.
+#' @param effect_type A string to specify the effect size estimate: "d" or "r_sq"
+#' @param do_multivariate Logical; whether to apply multivariate multiplier. Default is FALSE.
+#' @param summary_info A list containing summary information for plot descriptions
 #'
 #' @return A plot visualizing effect sizes and simulated CIs.
 #' @export
 #'
 #' @examples
-#' # Example usage
-#' # create_plots(pd)
+#' Example usage
+#' create_plots(pd)
 create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd', do_multivariate = FALSE, add_description = FALSE, do_minimal_title = FALSE, summary_info = NULL) {
-  
-  library(ggplot2)
 
   # General plot parameters
   pp <- list()
@@ -116,7 +118,7 @@ create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd',
     p <- plot_power_panel(pp, plot_data_list, output_type, use_category_bins = pp$use_category_bins)
   
   } else {
-    error('Please specify simci, density, or spatial')
+    stop('Please specify simci, density, or spatial')
   }
 
   # Add extra info, if specified

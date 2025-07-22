@@ -8,6 +8,28 @@
 
 #' Function: Plot Simultaeous CIs
 #'
+#' @import ggplot2
+#' @import metafor
+#' @importFrom grDevices dev.off png
+#' @importFrom graphics axis box image par
+#' @importFrom utils read.csv
+#' @importFrom reshape2 melt
+#' @importFrom oro.nifti readNIfTI writeNIfTI
+#' @importFrom neurobase ortho2
+#' @importFrom grid rasterGrob
+#' @importFrom pwr pwr.t.test
+#' @importFrom ggbeeswarm geom_quasirandom
+#' @importFrom colorspace diverge_hsv
+#' @importFrom png readPNG
+#' @importFrom grDevices dev.off png
+#' @importFrom graphics axis box image par
+#' @importFrom utils read.csv
+#' @importFrom reshape2 melt
+#' @importFrom oro.nifti readNIfTI writeNIfTI
+#' @importFrom neurobase ortho2
+#' @importFrom grid rasterGrob
+#' @importFrom pwr pwr.t.test
+#' @importFrom ggbeeswarm geom_quasirandom
 #' @param pp A list of plot parameters
 #' @param plot_data_list A list containing effect size data for plotting:
 #'  - `data`: A list containing sorted & downsampled effect size data & helpers: estimate, cons_estimate, lb, ub, below_cross_idx, and above_cross_idx
@@ -19,10 +41,14 @@
 #' @export
 #'
 #' @examples
-#' # Example usage
-#' # plot_simci_panel(plot_data)
+#' Example usage
+#' plot_simci_panel(plot_data)
 plot_simci_panel <- function(pp, plot_data_list) {
 
+  if (length(plot_data_list) == 0) {
+    stop("plot_data_list cannot be empty")
+  }
+  
   # add simci-specific plot params
   pp$non_overlap_colors <- "#4ECDC4"
   pp$overlap_colors <- "#FF6F61"
@@ -109,8 +135,8 @@ plot_simci_panel <- function(pp, plot_data_list) {
 #' @export
 #'
 #' @examples
-#' # Example usage
-#' # plot_density_panel(plot_data)
+#' Example usage
+#' plot_density_panel(plot_data)
 plot_density_panel <- function(pp, plot_data_list, use_effect_size_bin = FALSE) {
 
   # add density-specific plot params
@@ -278,12 +304,9 @@ plot_density_panel <- function(pp, plot_data_list, use_effect_size_bin = FALSE) 
 #' @export
 #'
 #' @examples
-#' # Example usage
-#' # plot_activation_maps(plot_data)
+#' Example usage
+#' plot_activation_maps(plot_data)
 plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
-
-  library(neurobase)
-  library(grid)
 
   # add spatial map-specific plot params
 
@@ -526,11 +549,9 @@ colorbar_custom <- function(breaks, #the minimum and maximum z values for which
 #' @export
 #'
 #' @examples
-#' # Example usage
-#' # plot_connectivity_panel(plot_data)
+#' Example usage
+#' plot_connectivity_panel(plot_data)
 plot_connectivity_panel <- function(pp, plot_data_list, threshold_category = NA) {
-
-  library(reshape2)
 
   # add connectivity map-specific plot params
   # TODO: update with plot params
@@ -749,9 +770,6 @@ plot_full_mat <- function(pp, triangle_ordered, ukb = FALSE, mapping_path = NA) 
 # Plot power
 plot_power_panel <- function(pp, plot_data_list, output_type, use_category_bins = FALSE, do_spatial_plot = FALSE) {
   
-  library(pwr)
-  library(ggbeeswarm)
-  
   # add power-specific plot params
   
   pp$size <- 0.4
@@ -806,7 +824,7 @@ plot_power_panel <- function(pp, plot_data_list, output_type, use_category_bins 
   }
   
   if (do_spatial_plot && use_category_bins) {
-    error("Currently not supported to plot spatial maps with binned effect sizes.")
+    stop("Currently not supported to plot spatial maps with binned effect sizes.")
   }
   
   
@@ -998,8 +1016,8 @@ plot_power_panel <- function(pp, plot_data_list, output_type, use_category_bins 
 #' @export
 #'
 #' @examples
-#' # Example usage
-#' # get_summary_info(pp, study_details, extra_study_details)
+#' Example usage
+#' get_summary_info(pp, study_details, extra_study_details)
 get_summary_info <- function(study_details, extra_study_details) {
 
   summary_info <- list()
@@ -1100,8 +1118,8 @@ combine_summary_info <- function(summary_info) {
 #' @export
 #'
 #' @examples
-#' # Example usage
-#' # add_plot_description(p, pp, study_details, extra_study_details)
+#' Example usage
+#' add_plot_description(p, pp, study_details, extra_study_details)
 add_plot_description <- function(p, pp, summary_info, add_extra_text, do_minimal_title) {
 
   # add description-specific plot params

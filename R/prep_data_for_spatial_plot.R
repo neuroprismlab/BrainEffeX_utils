@@ -7,18 +7,34 @@
 #' @param combo_name A string specifying the combo to plot.
 #' @param mv_combo_name A string specifying the multivariate combo to plot.
 #' @param estimate A string to specify the effect size estimate: "d" or "r_sq"
-#' @param plot_info A list containing extra plot information (group_var, level, and reference atlas)
+#' @param plot_info A list containing extra plot information (group_var, 
+#' level, and reference atlas)
+#' @param brain_masks A list containing brain mask information
 #'
 #' @return A plot visualizing effect sizes and simulated CIs.
 #' @export
 #'
 #' @examples
 #' Example usage
-#' pd <- prep_data_for_spatial_plot(data = v$data[[i]], study_details = v$study[i, ], plot_info$grouping_var='none',
-#'              combo_name = "pooling.none.motion.none.mv.none", mv_combo_name = "pooling.none.motion.none.mv.multi")
+#' pd <- prep_data_for_spatial_plot(data = v$data[[i]], 
+#' study_details = v$study[i, ], plot_info$grouping_var='none',
+#' combo_name = "pooling.none.motion.none.mv.none", 
+#' mv_combo_name = "pooling.none.motion.none.mv.multi")
 prep_data_for_spatial_plot <- function(data, brain_masks, study_details, combo_name, mv_combo_name, estimate = 'd', plot_info = 'NA') {
 
-
+  # Input validation
+  if (!combo_name %in% names(data)) {
+    stop("combo_name '", combo_name, "' not found in data")
+  }
+  
+  if (!estimate %in% names(data[[combo_name]])) {
+    stop("estimate '", estimate, "' not found in data for combo '", combo_name, "'")
+  }
+  
+  if (!is.list(plot_info)) {
+    stop("plot_info must be a list containing grouping_var, group_level, and ref")
+  }
+  
   # 1. Get data
 
   # unlist if list
