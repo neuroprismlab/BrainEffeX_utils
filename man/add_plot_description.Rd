@@ -9,9 +9,13 @@ add_plot_description(p, pp, summary_info, add_extra_text, do_minimal_title)
 \arguments{
 \item{p}{A ggplot object to which the labels will be added.}
 
-\item{study_details}{A list of original study details: orig_stat_type, test_component_1, test_component_2, dataset, map_type, group, and ref.}
+\item{pp}{A list of plotting parameters.}
 
-\item{extra_study_details}{A list containing extra descriptive info: percent_not_zero, max_cons_effect, group_by_title, n_title, mv_estimate, and mv_ci.}
+\item{summary_info}{A list of summary info for the plot.}
+
+\item{add_extra_text}{Whether to add extra text below plot with more info.}
+
+\item{do_minimal_title}{Whether to use minimal title option.}
 }
 \value{
 A ggplot object with summary labels.

@@ -299,6 +299,7 @@ plot_density_panel <- function(pp, plot_data_list, use_effect_size_bin = FALSE) 
 #'  - `summary_info`: A list containing extra descriptive info: percent_not_zero, max_cons_effect, group_by_title, and n_title
 #'  - `mv_data`: A list containing multivariate effect size data: estimate, lb, and ub
 #'  - `study_details`: A list of original study details: orig_stat_type, test_component_1, test_component_2, dataset, map_type, group, and ref
+#' @param threshold_category A threshold category for plots.
 #'
 #' @return A ggplot object containing one or overlapping densities
 #' @export
@@ -544,6 +545,7 @@ colorbar_custom <- function(breaks, #the minimum and maximum z values for which
 #'  - `summary_info`: A list containing extra descriptive info: percent_not_zero, max_cons_effect, group_by_title, and n_title
 #'  - `mv_data`: A list containing multivariate effect size data: estimate, lb, and ub
 #'  - `study_details`: A list of original study details: orig_stat_type, test_component_1, test_component_2, dataset, map_type, group, and ref
+#' @param threshold_category An optional threshold category
 #'
 #' @return A ggplot object containing one or overlapping densities
 #' @export
@@ -1008,7 +1010,6 @@ plot_power_panel <- function(pp, plot_data_list, output_type, use_category_bins 
 #'
 #' This function gets summary info to a ggplot object.
 #'
-#' @param p A ggplot object to which the labels will be added.
 #' @param study_details A list of original study details: orig_stat_type, test_component_1, test_component_2, dataset, map_type, group, and ref.
 #' @param extra_study_details A list containing extra descriptive info: percent_not_zero, max_cons_effect, group_by_title, n_title, mv_estimate, and mv_ci.
 #'
@@ -1111,8 +1112,10 @@ combine_summary_info <- function(summary_info) {
 #' This function adds summary labels to a ggplot object.
 #'
 #' @param p A ggplot object to which the labels will be added.
-#' @param study_details A list of original study details: orig_stat_type, test_component_1, test_component_2, dataset, map_type, group, and ref.
-#' @param extra_study_details A list containing extra descriptive info: percent_not_zero, max_cons_effect, group_by_title, n_title, mv_estimate, and mv_ci.
+#' @param pp A list of plotting parameters.
+#' @param summary_info A list of summary info for the plot.
+#' @param add_extra_text Whether to add extra text below plot with more info.
+#' @param do_minimal_title Whether to use minimal title option.
 #'
 #' @return A ggplot object with summary labels.
 #' @export

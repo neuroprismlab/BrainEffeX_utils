@@ -10,8 +10,6 @@ get_summary_info(study_details, extra_study_details)
 \item{study_details}{A list of original study details: orig_stat_type, test_component_1, test_component_2, dataset, map_type, group, and ref.}
 
 \item{extra_study_details}{A list containing extra descriptive info: percent_not_zero, max_cons_effect, group_by_title, n_title, mv_estimate, and mv_ci.}
-
-\item{p}{A ggplot object to which the labels will be added.}
 }
 \value{
 A ggplot object with summary labels.

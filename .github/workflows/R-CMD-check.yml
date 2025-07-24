@@ -47,7 +47,9 @@ jobs:
           "graphics",
           "utils",
           "colorspace",
-          "png"
+          "png",
+          "ggpubr",
+          "devtools"
         ))
         remotes::install_deps(dependencies = TRUE)
       shell: Rscript {0}
