@@ -41,7 +41,7 @@
 #' @export
 #'
 #' @examples
-#' Example usage
+#' # Example usage
 #' plot_simci_panel(plot_data)
 plot_simci_panel <- function(pp, plot_data_list) {
 
@@ -135,7 +135,7 @@ plot_simci_panel <- function(pp, plot_data_list) {
 #' @export
 #'
 #' @examples
-#' Example usage
+#' # Example usage
 #' plot_density_panel(plot_data)
 plot_density_panel <- function(pp, plot_data_list, use_effect_size_bin = FALSE) {
 
@@ -304,7 +304,7 @@ plot_density_panel <- function(pp, plot_data_list, use_effect_size_bin = FALSE) 
 #' @export
 #'
 #' @examples
-#' Example usage
+#' # Example usage
 #' plot_activation_maps(plot_data)
 plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
 
@@ -549,7 +549,7 @@ colorbar_custom <- function(breaks, #the minimum and maximum z values for which
 #' @export
 #'
 #' @examples
-#' Example usage
+#' # Example usage
 #' plot_connectivity_panel(plot_data)
 plot_connectivity_panel <- function(pp, plot_data_list, threshold_category = NA) {
 
@@ -1016,7 +1016,7 @@ plot_power_panel <- function(pp, plot_data_list, output_type, use_category_bins 
 #' @export
 #'
 #' @examples
-#' Example usage
+#' # Example usage
 #' get_summary_info(pp, study_details, extra_study_details)
 get_summary_info <- function(study_details, extra_study_details) {
 
@@ -1118,7 +1118,7 @@ combine_summary_info <- function(summary_info) {
 #' @export
 #'
 #' @examples
-#' Example usage
+#' # Example usage
 #' add_plot_description(p, pp, study_details, extra_study_details)
 add_plot_description <- function(p, pp, summary_info, add_extra_text, do_minimal_title) {
 

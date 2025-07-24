@@ -15,7 +15,7 @@
 #' @export
 #'
 #' @examples
-#' Example usage
+#' # Example usage
 #' pd <- prep_data_for_spatial_plot(data = v$data[[i]], 
 #' study_details = v$study[i, ], plot_info$grouping_var='none',
 #' combo_name = "pooling.none.motion.none.mv.none", 

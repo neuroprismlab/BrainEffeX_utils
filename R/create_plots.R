@@ -20,7 +20,7 @@
 #' @export
 #'
 #' @examples
-#' Example usage
+#' # Example usage
 #' create_plots(pd)
 create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd', do_multivariate = FALSE, add_description = FALSE, do_minimal_title = FALSE, summary_info = NULL) {
   
