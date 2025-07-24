@@ -4,7 +4,7 @@
 \alias{plot_density_panel}
 \title{Function: Plot Densities}
 \usage{
-plot_density_panel(pp, plot_data_list)
+plot_density_panel(pp, plot_data_list, use_effect_size_bin = FALSE)
 }
 \arguments{
 \item{pp}{A list of plot parameters}
@@ -16,6 +16,8 @@ plot_density_panel(pp, plot_data_list)
 \item \code{mv_data}: A list containing multivariate effect size data: estimate, lb, and ub
 \item \code{study_details}: A list of original study details: orig_stat_type, test_component_1, test_component_2, dataset, map_type, group, and ref
 }}
+
+\item{use_effect_size_bin}{Whether to bin effect sizes}
 }
 \value{
 A ggplot object containing one or overlapping densities
@@ -25,5 +27,7 @@ Function: Plot Densities
 }
 \examples{
 # Example usage
-# plot_density_panel(plot_data)
+\dontrun{
+plot_density_panel(plot_data)
+}
 }

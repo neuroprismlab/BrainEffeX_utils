@@ -2,41 +2,26 @@
 #'
 #' This function plots effect sizes (Cohen's d or R-squared) and simulated confidence intervals (CIs)
 #' for a given dataset. It allows optional grouping, visualization, and file saving.
-#'
+#' @import metafor
+#' @importFrom metafor rma.mv
 #' @param v A list containing effect size data
 #' @param brain_masks A list containing the brain masks
 #' @param combo_name A string specifying the combo to plot - # TODO: note: in app, this is saved directly in v
-#' @param group_by A string to specify grouping: "orig_stat_type" or "category"
+#' @param grouping_var A string to specify grouping: "orig_stat_type" or "category"
 #'
 #' @return An updated list with the grouped_by data
 #' @export
 #'
 #' @examples
 #' # Example usage
-#' # meta_analysis(v,v$brain_masks, "pooling.none.motion.none.mv.none")
+#' \dontrun{
+#' meta_analysis(v,v$brain_masks, "pooling.none.motion.none.mv.none")
+#' }
 meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category") {
 
-  testing <- TRUE
-
-  # libraries & functions
-
-  library(metafor)
+  testing <- FALSE
 
   # helpers
-
-  which_triangle <- function(mat) {
-    if (!is.matrix(mat)) stop("Input must be a matrix")
-
-    is_upper <- all(mat[lower.tri(mat)] == 0)
-    is_lower <- all(mat[upper.tri(mat)] == 0)
-    # note: we do not care about checking for diagonal (this function does not include diagonal)
-
-    if (is_upper && is_lower) { return("both")
-    } else if (is_upper) { return("upper")
-    } else if (is_lower) { return("lower")
-    } else { return("no_data")
-    }
-  }
 
   d_se <- function(d, n1, n2 = NULL) {
     if (is.null(n2)) { # one-sample
@@ -54,9 +39,46 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
     return(se)
   }
 
+  if (!is.list(v)) {
+    stop("v must be a list")
+  }
+  
+  if (!"study" %in% names(v)) {
+    stop("v must contain a 'study' component")
+  }
+  
+  if (!"data" %in% names(v)) {
+    stop("v must contain a 'data' component")
+  }
+  
+  if (!is.data.frame(v$study)) {
+    stop("v$study must be a data frame")
+  }
+  
+  if (!is.list(v$data)) {
+    stop("v$data must be a list")
+  }
+  
+  if (!grouping_var %in% names(v$study)) {
+    stop("grouping_var '", grouping_var, "' not found in v$study columns")
+  }
+  
+  if (length(v$data) == 0) {
+    stop("v$data is empty")
+  }
+  
+  # Check if combo_name exists in at least one study
+  combo_exists <- any(sapply(v$data, function(study_data) {
+    combo_name %in% names(study_data) || 
+      any(grepl(combo_name, names(study_data)))
+  }))
+  
+  if (!combo_exists) {
+    stop("combo_name '", combo_name, "' not found in any study data")
+  }
 
   # initialize vars for storing grouping results
-  # if data_group doesn't exist, create
+  # only create if data_group doesn't exist
   meta_str <- paste0('meta_',grouping_var)
   if (!(meta_str %in% names(v))) {
     v[[meta_str]] <- list()
@@ -76,40 +98,40 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
       matching_idx__study <- which(v$study[[grouping_var]] == level & v$study$ref == ref) # TODO: maybe explicitly add map type here
 
       if (length(matching_idx__study) > 0) {
-
+        
+        this_meta_label <- paste0(level, "_reference_", ref) # label to refer to this meta-analysis by name
+        
+        print(paste0("- ", this_meta_label))
+        
+        # if (!grepl("cognitive", this_meta_label)) {
+        # if (!grepl("", this_meta_label)) {  # do everything
+        # print(paste0("  (Skipping - only doing ", specific_category, ")"))
+        
+        
+        
         matching_names <- v$study$name[matching_idx__study]
         matching_idx__data <- which(toupper(names(v$data)) %in% toupper(matching_names))
         # idx of the studies in d that match the current stat and ref
 
         # get intersection of all masks
 
-        intersection_mask <- brain_masks[[v$study$name[matching_idx__study[1]]]]$mask
-        for (this_study in matching_idx__data) {
-
-          if (v$study$map_type[matching_idx__study[1]] == "fc") {
-
-            # TEMP mask flipper - TODO: we make sure everything is upper tri in calc_gl . Fix the masks accordingly there, then remove this next part
-            triangle_type <- which_triangle(brain_masks[[v$study$name[this_study]]]$mask)
-            switch(triangle_type,
-                   # "upper" = leave as is
-                   "lower" = { # transpose
-                     warning("Data is upper triangular but mask is lower triangular.")
-                     brain_masks[[v$study$name[this_study]]]$mask <- t(brain_masks[[v$study$name[this_study]]]$mask)
-                   },
-                   "both" = { # remove lower
-                     warning("Data should be upper triangular but contains entries on both sides of diagonal.")
-                     # v$data[[this_study]][[combo_name]]$d[lower.tri(v$data[[this_study]][[combo_name]]$d)] <- 0
-                     brain_masks[[v$study$name[this_study]]]$mask[lower.tri(brain_masks[[v$study$name[this_study]]]$mask)] <- 0
-                   },
-                   "no_data" = { # remove this data
-                     warning("Mask suggests no data exists.")
-                     # v$data[[this_study]][[combo_name]]$d <- NULL
-                     # v$study$name[this_study]]]$mask[lower.tri(brain_masks[[v$study$name[this_study]]]$mask <- NULL
-                   }
-                  # TODO: check if there are too few entries in mask (e.g., <75%)
-              )
+        if (grepl("net", combo_name) | grepl("mv.multi", combo_name)) {
+          
+          # Make mask from data
+          template_combo_name <- names(v$data[[1]])[grepl(combo_name, names(v$data[[1]]))] # mv combo_names change
+          intersection_mask <- rep(TRUE, length(v$data[[matching_idx__study[1]]][[template_combo_name]]$d))
+          if (length(intersection_mask) == 0) {
+            intersection_mask <- TRUE
           }
-          intersection_mask <- intersection_mask & brain_masks[[v$study$name[this_study]]]$mask
+          
+        } else {
+          
+          # Get existing edge- / voxel-level mask
+        
+          intersection_mask <- brain_masks[[v$study$name[matching_idx__study[1]]]]$mask
+          for (this_study in matching_idx__data) {
+            intersection_mask <- intersection_mask & brain_masks[[v$study$name[this_study]]]$mask
+          }
         }
 
 
@@ -133,6 +155,11 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
           # get individual study effect size, sample size, & ci's
 
           this_study <- matching_idx__data[1]
+          
+          if (grepl("multi",combo_name)) {
+            combo_name_orig <- combo_name
+            combo_name <- names(v$data[[this_study]])[grepl(combo_name_orig, names(v$data[[this_study]]))] # because some are "multi" and some "multi.r" - TODO: check - previous version somehow changed mv.none to mv.multi - check
+          }
 
           # set up n's for se calc
 
@@ -158,7 +185,11 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
           r_sq_se__group <- r_sq_se(r_sq__group, n = this_n_total)
 
           print("- single")
-
+          
+          if (grepl("multi",combo_name)) {
+            # go back to the original multivariate combo basename
+            combo_name <- combo_name_orig
+          }
 
         } else { # META-ANALYSIS:
 
@@ -166,11 +197,7 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
 
           # preallocate to store data across studies
 
-          if (v$study$map_type[matching_idx__data[1]] == "act") {
-            n_vars_intersection <- sum(intersection_mask)
-          } else {
-            n_vars_intersection <- sum(intersection_mask)
-          }
+          n_vars_intersection <- sum(intersection_mask)
 
           d__all <- matrix(NA, nrow = n_vars_intersection, ncol = length(matching_idx__data))
           d_sim_ci_ub__all <- d__all
@@ -186,7 +213,13 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
 
           it <- 1
           for (this_study in matching_idx__data) {
-
+            
+            if (grepl("multi", combo_name)) {
+              # update since the multivariate combo names change for each study - thus we pass a basename for multi
+              combo_name_orig <- combo_name
+              combo_name <- names(v$data[[this_study]])[grepl(combo_name_orig, names(v$data[[this_study]]))] # because some are "multi" and some "multi.r" - TODO: check - previous version somehow changed mv.none to mv.multi - check
+            }
+            
             # get n's
 
             this_n_total <- as.numeric(v$data[[this_study]][[combo_name]]$n[1])
@@ -216,8 +249,12 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
             #   but only has 1's where effects exist across studies (i.e., where there are 1's in intersection_mask)
             #   -> this lets us grab effects only where they exist across studies
 
-            d_mask <- brain_masks[[v$study$name[this_study]]]$mask
-            mask_of_masks <- intersection_mask[d_mask == 1]
+            if (grepl("net", combo_name) | grepl("multi", combo_name)) {
+              mask_of_masks <- intersection_mask
+            } else {
+              d_mask <- brain_masks[[v$study$name[this_study]]]$mask
+              mask_of_masks <- intersection_mask[d_mask == 1]
+            }
 
             this_d <- this_d[mask_of_masks]
             this_d_sim_ci_lb <- this_d_sim_ci_lb[mask_of_masks]
@@ -243,10 +280,14 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
             r_sq_se__all[, it] <- this_r_sq_se
 
             it <- it + 1
+            
+            if (grepl("multi",combo_name)) {
+              # go back to the original multivariate combo basename
+              combo_name <- combo_name_orig
+            }
 
           }
-
-
+          
 
           # 2. Meta analysis
 
@@ -282,6 +323,8 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
 
             } else { # meta-analysis
 
+              optimizers <- c("nlminb", "Nelder-Mead", "BFGS", "bobyqa","nloptr","nlm","hjk") # TODO: check how often this is needed
+              
               # For d: do meta only if not empty or NA; otherwise set NA
 
               if (length(d__all[this_variable,]) == 0 || length(d_se__all[this_variable,]) == 0 || all(is.na(d__all[this_variable,])) || all(is.na(d_se__all[this_variable,]))) {
@@ -292,9 +335,22 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
               } else { # do meta
 
                 d_meta_analysis <- NULL
-                d_meta_analysis <- rma.uni(yi = d__all[this_variable,], se = d_se__all[this_variable,], method = c("REML","DL"), level = ci_level) # added alternative closed form method in case REML doesn't converge
+                # d_meta_analysis <- rma.uni(yi = d__all[this_variable,], se = d_se__all[this_variable,], method = c("REML","DL"), level = ci_level) # added alternative closed form method in case REML doesn't converge
                 # d_meta_analysis <- rma.uni(yi = d__all[this_variable,], se = d_se__all[this_variable,], method = "REML", control=list(stepadj=0.5, maxiter=1000)) # added control to help with convergence
-
+                
+                # nested by dataset
+                df <- data.frame(yi = d__all[this_variable,], vi = d_se__all[this_variable,]^2, dataset = v$study$dataset[matching_idx__study], name = v$study$name[matching_idx__study])
+                # d_meta_analysis <- rma.mv(yi = yi, V = vi, data = df, slab = dataset, level = ci_level, random = ~1 | dataset / name) # https://bookdown.org/MathiasHarrer/Doing_Meta_Analysis_in_R/multilevel-ma.html # added alternative closed form method in case REML doesn't converge
+                for (opt in optimizers) {
+                  d_meta_analysis <- tryCatch(
+                    rma.mv(yi = yi, V = vi, data = df, slab = dataset, level = ci_level, random = ~1 | dataset / name, control=list(optimizer=opt)), # https://bookdown.org/MathiasHarrer/Doing_Meta_Analysis_in_R/multilevel-ma.html # added alternative closed form method in case REML doesn't converge
+                    error = function(e) NULL                           
+                  )
+                  if (!is.null(d_meta_analysis)) {
+                    break
+                  }
+                }
+                
                 d__group[this_variable] <- d_meta_analysis$b
 
                 # this_ci <- confint(d_meta_analysis, level = ci_level)
@@ -314,8 +370,20 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
               } else {
 
                 r_sq_meta_analysis <- NULL
-                r_sq_meta_analysis <- rma.uni(yi = r_sq__all[this_variable,], se = r_sq_se__all[this_variable,], method = c("REML","DL"), level = ci_level) # added alternative closed form method in case REML doesn't converge
+                # r_sq_meta_analysis <- rma.uni(yi = r_sq__all[this_variable,], se = r_sq_se__all[this_variable,], method = c("REML","DL"), level = ci_level) # added alternative closed form method in case REML doesn't converge
                 # r_sq_meta_analysis <- rma.uni(yi = r_sq__all[this_variable,], se = r_sq_se__all[this_variable,], method = "REML", control=list(stepadj=0.5, maxiter=1000))
+
+                # nested by dataset
+                df <- data.frame(yi = r_sq__all[this_variable,], vi = r_sq_se__all[this_variable,]^2, dataset = v$study$dataset[matching_idx__study], name = v$study$name[matching_idx__study])
+                for (opt in optimizers) {
+                  r_sq_meta_analysis <- tryCatch(
+                    rma.mv(yi = yi, V = vi, data = df, slab = dataset, level = ci_level, random = ~1 | dataset / name, control=list(optimizer=opt)), # https://bookdown.org/MathiasHarrer/Doing_Meta_Analysis_in_R/multilevel-ma.html # added alternative closed form method in case REML doesn't converge
+                    error = function(e) NULL                           
+                  )
+                  if (!is.null(r_sq_meta_analysis)) {
+                    break
+                  }
+                }
 
                 r_sq__group[this_variable] <- r_sq_meta_analysis$b
 
@@ -362,27 +430,29 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
         }
 
         # store d_avg, sim_ci_lb_avg, and sim_ci_ub_avg in data_group list as a list
+        
+        v[[meta_str]]$data[[this_meta_label]][[combo_name]]$d <- d__group
+        # v[[meta_str]]$data[[this_meta_label]][[combo_name]]$se <- d_se__group
 
-        v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$d <- d__group
-        # v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$se <- d_se__group
+        v[[meta_str]]$data[[this_meta_label]][[combo_name]]$r_sq <- r_sq__group
+        # v[[meta_str]]$data[[this_meta_label]][[combo_name]]$r_sq_se <- r_sq_se__group
 
-        v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$r_sq <- r_sq__group
-        # v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$r_sq_se <- r_sq_se__group
-
-        v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$sim_ci_lb <- d_sim_ci_lb__group
-        v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$sim_ci_ub <- d_sim_ci_ub__group
-        v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$r_sq_sim_ci_lb <- r_sq_sim_ci_lb__group
-        v[[meta_str]]$data[[paste0(level, "_reference_", ref)]][[combo_name]]$r_sq_sim_ci_ub <- r_sq_sim_ci_ub__group
+        v[[meta_str]]$data[[this_meta_label]][[combo_name]]$sim_ci_lb <- d_sim_ci_lb__group
+        v[[meta_str]]$data[[this_meta_label]][[combo_name]]$sim_ci_ub <- d_sim_ci_ub__group
+        v[[meta_str]]$data[[this_meta_label]][[combo_name]]$r_sq_sim_ci_lb <- r_sq_sim_ci_lb__group
+        v[[meta_str]]$data[[this_meta_label]][[combo_name]]$r_sq_sim_ci_ub <- r_sq_sim_ci_ub__group
 
         # store the study info in the study_stat dataframe
 
-        v[[meta_str]]$study <- rbind(v[[meta_str]]$study, data.frame(group_level = level, ref = ref, name = paste0(level, "_reference_", ref)))
+        v[[meta_str]]$study <- rbind(v[[meta_str]]$study, data.frame(group_level = level, ref = ref, name = this_meta_label))
 
         # store intersection masks
 
         # TODO: pass this up through plotter for visualization
-        v[[meta_str]]$brain_masks[[paste0(level, "_reference_", ref)]][[combo_name]]$mask <- intersection_mask
+        v[[meta_str]]$brain_masks[[this_meta_label]][[combo_name]]$mask <- intersection_mask
+        v[[meta_str]]$brain_masks[[this_meta_label]][[combo_name]]$mask_type <- "intersection"
 
+        
       }
     }
   }

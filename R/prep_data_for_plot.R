@@ -8,15 +8,22 @@
 #' @param mv_combo_name A string specifying the multivariate combo to plot.
 #' @param estimate A string to specify the effect size estimate: "d" or "r_sq"
 #' @param plot_info A list containing extra plot information (group_var, level, and reference atlas)
+#' @param prep_spatial Logical; whether to prepare data for spatial plotting. Default is FALSE.
+#' @param brain_masks A list containing brain mask information for spatial plotting
 #'
 #' @return A plot visualizing effect sizes and simulated CIs.
 #' @export
 #'
 #' @examples
-#' Example usage
-#' pd <- prep_data_for_plot(data = v$data[[i]], study_details = v$study[i, ], plot_info$grouping_var='none',
-#'              combo_name = "pooling.none.motion.none.mv.none", mv_combo_name = "pooling.none.motion.none.mv.multi")
-prep_data_for_plot <- function(data, study_details, combo_name, mv_combo_name, estimate = 'd', plot_info = 'NA') {
+#' # Example usage
+#' \dontrun{
+#' plot_info <- list(grouping_var = 'none', group_level = 'test', ref = 'atlas')
+#' pd <- prep_data_for_plot(data = v$data[[i]], study_details = v$study[i, ], 
+#' plot_info = plot_info, grouping_var='none', 
+#' combo_name = "pooling.none.motion.none.mv.none", 
+#' mv_combo_name = "pooling.none.motion.none.mv.multi")
+#' }
+prep_data_for_plot <- function(data, study_details, combo_name, mv_combo_name, estimate = 'd', plot_info = 'NA', prep_spatial = FALSE, brain_masks = NA) {
 
 
   # 1. Clean, prep, and downsample data (clean = remove NA's, prep = sort)
@@ -39,6 +46,7 @@ if (!any(is.nan(data[[combo_name]][[estimate]]))) { # check if data exists
 
   # unlist sim CIs if list
   if (is.list(data[[combo_name]][[ci_lb]])) {
+    # data[[combo_name]][[estimate]] <- unlist(data[[combo_name]][[estimate]])
     data[[combo_name]][[ci_lb]] <- unlist(data[[combo_name]][[ci_lb]])
     data[[combo_name]][[ci_ub]] <- unlist(data[[combo_name]][[ci_ub]])
   }
@@ -53,7 +61,11 @@ if (!any(is.nan(data[[combo_name]][[estimate]]))) { # check if data exists
   sorted_lower_bounds_whole <- data[[combo_name]][[ci_lb]][sorted_indices]
 
   # downsample data for plotting
-  downsample <- length(sorted_indices) %/% 100
+  if (prep_spatial) { # don't downsample
+    downsample <- 1
+  } else {
+    downsample <- length(sorted_indices) %/% 100
+  }
 
   if (downsample < 1) {
     downsample = 1
@@ -159,10 +171,17 @@ if (!any(is.nan(data[[combo_name]][[estimate]]))) { # check if data exists
     }
   }
 
+  
+  # 3.5 If prep spatial, return to original order
+  if (prep_spatial) {
+    sorted_estimate <- sorted_estimate[order(sorted_indices)]
+    sorted_upper_bounds <- sorted_upper_bounds[order(sorted_indices)]
+    sorted_lower_bounds <- sorted_lower_bounds[order(sorted_indices)]
+    sorted_cons_estimate <- sorted_cons_estimate[order(sorted_indices)]
+  }
 
 
   # 4. Return ready-to-plot structure
-
 
   plot_data <- list(
     data = list(
@@ -185,6 +204,14 @@ if (!any(is.nan(data[[combo_name]][[estimate]]))) { # check if data exists
     ),
     study_details = study_details
   )
+  
+  # add masks if spatial
+  if (prep_spatial) {
+    if (length(brain_masks) == 1 && is.na(brain_masks)) {
+      stop("prep_spatial is TRUE but brain_masks is NA. Please provide a valid brain_masks data frame.")
+    }
+    plot_data$extra_study_details$brain_masks <- brain_masks
+  }
 
   return(plot_data)
 

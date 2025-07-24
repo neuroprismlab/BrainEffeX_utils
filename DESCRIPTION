@@ -8,6 +8,23 @@ Description: Provides functionality for loading, plotting, and descriptive data 
 License: GPL-3 
 Encoding: UTF-8
 Imports: 
-    oro.nifti
+    ggplot2,
+    metafor,
+    oro.nifti,
+    neurobase,
+    reshape2,
+    pwr,
+    ggbeeswarm,
+    grid,
+    grDevices,
+    graphics,
+    utils,
+    colorspace,
+    png,
+    ggpubr,
+    devtools
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
