@@ -42,7 +42,9 @@
 #'
 #' @examples
 #' # Example usage
+#' \dontrun{
 #' plot_simci_panel(plot_data)
+#' }
 plot_simci_panel <- function(pp, plot_data_list) {
 
   if (length(plot_data_list) == 0) {
@@ -130,13 +132,16 @@ plot_simci_panel <- function(pp, plot_data_list) {
 #'  - `summary_info`: A list containing extra descriptive info: percent_not_zero, max_cons_effect, group_by_title, and n_title
 #'  - `mv_data`: A list containing multivariate effect size data: estimate, lb, and ub
 #'  - `study_details`: A list of original study details: orig_stat_type, test_component_1, test_component_2, dataset, map_type, group, and ref
+#' @param use_effect_size_bin Whether to bin effect sizes
 #'
 #' @return A ggplot object containing one or overlapping densities
 #' @export
 #'
 #' @examples
 #' # Example usage
+#' \dontrun{
 #' plot_density_panel(plot_data)
+#' }
 plot_density_panel <- function(pp, plot_data_list, use_effect_size_bin = FALSE) {
 
   # add density-specific plot params
@@ -306,7 +311,9 @@ plot_density_panel <- function(pp, plot_data_list, use_effect_size_bin = FALSE) 
 #'
 #' @examples
 #' # Example usage
+#' \dontrun{
 #' plot_activation_maps(plot_data)
+#' }
 plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
 
   # add spatial map-specific plot params
@@ -552,7 +559,9 @@ colorbar_custom <- function(breaks, #the minimum and maximum z values for which
 #'
 #' @examples
 #' # Example usage
+#' \dontrun{
 #' plot_connectivity_panel(plot_data)
+#' }
 plot_connectivity_panel <- function(pp, plot_data_list, threshold_category = NA) {
 
   # add connectivity map-specific plot params
@@ -1018,7 +1027,9 @@ plot_power_panel <- function(pp, plot_data_list, output_type, use_category_bins 
 #'
 #' @examples
 #' # Example usage
+#' \dontrun{
 #' get_summary_info(pp, study_details, extra_study_details)
+#' }
 get_summary_info <- function(study_details, extra_study_details) {
 
   summary_info <- list()
@@ -1122,7 +1133,9 @@ combine_summary_info <- function(summary_info) {
 #'
 #' @examples
 #' # Example usage
+#' \dontrun{
 #' add_plot_description(p, pp, study_details, extra_study_details)
+#' }
 add_plot_description <- function(p, pp, summary_info, add_extra_text, do_minimal_title) {
 
   # add description-specific plot params

@@ -5,7 +5,7 @@
 #' @import ggplot2
 #' @importFrom ggplot2 element_text
 #' @param plot_data_list A list of lists containing effect size data for plotting:
-#'  - plot_data_list[i] = `plot_data`: contains:
+#'  - plot_data_list = `plot_data`: contains:
 #'    - `data`: A list containing sorted & downsampled effect size data & helpers: estimate, cons_estimate, lb, ub, below_cross_idx, and above_cross_idx
 #'    - `extra_study_details`: A list containing extra descriptive info: percent_not_zero, max_cons_effect, group_by_title, n_title, mv_estimate, and mv_ci
 #'    - `study_details`: A list of original study details: orig_stat_type, test_component_1, test_component_2, dataset, map_type, group, and ref
@@ -21,7 +21,9 @@
 #'
 #' @examples
 #' # Example usage
+#' \dontrun{
 #' create_plots(pd)
+#' }
 create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd', do_multivariate = FALSE, add_description = FALSE, do_minimal_title = FALSE, summary_info = NULL) {
   
   # General plot parameters

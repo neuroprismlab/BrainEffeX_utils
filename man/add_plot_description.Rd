@@ -25,5 +25,7 @@ This function adds summary labels to a ggplot object.
 }
 \examples{
 # Example usage
+\dontrun{
 add_plot_description(p, pp, study_details, extra_study_details)
+}
 }

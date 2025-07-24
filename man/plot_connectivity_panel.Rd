@@ -27,5 +27,7 @@ Function: Plot Connectivity Maps
 }
 \examples{
 # Example usage
+\dontrun{
 plot_connectivity_panel(plot_data)
+}
 }

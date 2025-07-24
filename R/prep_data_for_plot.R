@@ -16,11 +16,13 @@
 #'
 #' @examples
 #' # Example usage
+#' \dontrun{
 #' plot_info <- list(grouping_var = 'none', group_level = 'test', ref = 'atlas')
 #' pd <- prep_data_for_plot(data = v$data[[i]], study_details = v$study[i, ], 
 #' plot_info = plot_info, grouping_var='none', 
 #' combo_name = "pooling.none.motion.none.mv.none", 
 #' mv_combo_name = "pooling.none.motion.none.mv.multi")
+#' }
 prep_data_for_plot <- function(data, study_details, combo_name, mv_combo_name, estimate = 'd', plot_info = 'NA', prep_spatial = FALSE, brain_masks = NA) {
 
 

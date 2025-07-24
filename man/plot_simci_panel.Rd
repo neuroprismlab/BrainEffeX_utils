@@ -25,5 +25,7 @@ Function: Plot Simultaeous CIs
 }
 \examples{
 # Example usage
+\dontrun{
 plot_simci_panel(plot_data)
+}
 }

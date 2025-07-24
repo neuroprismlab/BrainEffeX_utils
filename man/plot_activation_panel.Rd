@@ -27,5 +27,7 @@ Function: Plot Voxel-level Activation Maps
 }
 \examples{
 # Example usage
+\dontrun{
 plot_activation_maps(plot_data)
+}
 }

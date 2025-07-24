@@ -16,10 +16,13 @@
 #'
 #' @examples
 #' # Example usage
+#' \dontrun{
 #' pd <- prep_data_for_spatial_plot(data = v$data[[i]], 
-#' study_details = v$study[i, ], plot_info$grouping_var='none',
+#' brain_masks = brain_masks,
+#' study_details = v$study[i, ],
 #' combo_name = "pooling.none.motion.none.mv.none", 
 #' mv_combo_name = "pooling.none.motion.none.mv.multi")
+#' }
 prep_data_for_spatial_plot <- function(data, brain_masks, study_details, combo_name, mv_combo_name, estimate = 'd', plot_info = 'NA') {
 
   # Input validation

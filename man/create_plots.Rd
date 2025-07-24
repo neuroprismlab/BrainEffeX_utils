@@ -17,7 +17,7 @@ create_plots(
 \arguments{
 \item{plot_data_list}{A list of lists containing effect size data for plotting:
 \itemize{
-\item plot_data_list\link{i} = \code{plot_data}: contains:
+\item plot_data_list = \code{plot_data}: contains:
 \itemize{
 \item \code{data}: A list containing sorted & downsampled effect size data & helpers: estimate, cons_estimate, lb, ub, below_cross_idx, and above_cross_idx
 \item \code{extra_study_details}: A list containing extra descriptive info: percent_not_zero, max_cons_effect, group_by_title, n_title, mv_estimate, and mv_ci
@@ -46,5 +46,7 @@ studies, overlapping studies, or meta-analytic results.
 }
 \examples{
 # Example usage
+\dontrun{
 create_plots(pd)
+}
 }

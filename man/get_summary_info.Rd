@@ -19,5 +19,7 @@ This function gets summary info to a ggplot object.
 }
 \examples{
 # Example usage
+\dontrun{
 get_summary_info(pp, study_details, extra_study_details)
+}
 }

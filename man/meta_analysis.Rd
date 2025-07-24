@@ -24,5 +24,7 @@ for a given dataset. It allows optional grouping, visualization, and file saving
 }
 \examples{
 # Example usage
+\dontrun{
 meta_analysis(v,v$brain_masks, "pooling.none.motion.none.mv.none")
+}
 }
