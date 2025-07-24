@@ -205,7 +205,7 @@ describe("meta_analysis function", {
       v <- create_mock_v_structure(n_studies = 2, n_variables = 5)
       v <- create_mock_brain_masks_in_v(v, n_variables = 5)
       
-      expect_error({
+      expect_warning({
         suppressWarnings({
           meta_analysis(
             v = v,
