@@ -6,23 +6,31 @@
 #' @importFrom metafor rma.mv
 #' @param v A list containing effect size data
 #' @param brain_masks A list containing the brain masks
-#' @param combo_name A string specifying the combo to plot - # TODO: note: in app, this is saved directly in v
+#' @param combo_name A string specifying the combo to plot (if NA, processes all combos)
 #' @param grouping_var A string to specify grouping: "orig_stat_type" or "category"
 #'
 #' @return An updated list with the grouped_by data
 #' @export
 #'
 #' @examples
-#' # Example usage
 #' \dontrun{
-#' meta_analysis(v,v$brain_masks, "pooling.none.motion.none.mv.none")
+#' # Example usage
+#' meta_analysis(v, v$brain_masks, "pooling.none.motion.none.mv.none")
 #' }
-meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category") {
-
+meta_analysis <- function(v, brain_masks, combo_name = NA, grouping_var = "category") {
+  
   testing <- FALSE
-
+  
+  # if combo_name not specified, create a list of all combo names
+  # otherwise create a list of just the given combo name
+  if (is.na(combo_name)) {
+    combo_names = names(v$data[[1]])
+  } else {
+    combo_names = c(combo_name)
+  }
+  
   # helpers
-
+  
   d_se <- function(d, n1, n2 = NULL) {
     if (is.null(n2)) { # one-sample
       se <- sqrt(1 / n1 + (d^2 / (2 * n1)))
@@ -31,14 +39,15 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
     }
     return(se)
   }
-
+  
   r_sq_se <- function(r_sq, n) {
     r <- sqrt(r_sq)
     se_r <- sqrt((1 - r^2) / (n - 2));
     se <- se_r^2
     return(se)
   }
-
+  
+  # Input validation
   if (!is.list(v)) {
     stop("v must be a list")
   }
@@ -67,398 +76,376 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
     stop("v$data is empty")
   }
   
-  # Check if combo_name exists in at least one study
-  combo_exists <- any(sapply(v$data, function(study_data) {
-    combo_name %in% names(study_data) || 
-      any(grepl(combo_name, names(study_data)))
-  }))
-  
-  if (!combo_exists) {
-    stop("combo_name '", combo_name, "' not found in any study data")
-  }
-
-  # initialize vars for storing grouping results
-  # only create if data_group doesn't exist
-  meta_str <- paste0('meta_',grouping_var)
-  if (!(meta_str %in% names(v))) {
-    v[[meta_str]] <- list()
-    v[[meta_str]]$data <- list() # store data for each stat + ref type
-    v[[meta_str]]$study <- data.frame(group = character(0), ref = character(0), name = character(0)) # store grouping info
-    v[[meta_str]]$brain_masks <- list()
-  }
-
-  # combo_name <- names(data)[grepl(combo_name, names(v$data[[1]]))] # because some are "multi" and some "multi.r" - TODO: this isn't great - somehow it changes mv.none to mv.multi
-
-  # for each level of the grouping var (e.g., statistic type, category)
-  for (level in unique(v$study[[grouping_var]])) {
-
-    # for each reference type
-    for (ref in unique(v$study$ref)) {
-
-      matching_idx__study <- which(v$study[[grouping_var]] == level & v$study$ref == ref) # TODO: maybe explicitly add map type here
-
-      if (length(matching_idx__study) > 0) {
+  # MAIN CHANGE: Add loop for each combo_name
+  for (current_combo in combo_names) {
+    
+    cat("Processing combo:", current_combo, "\n")
+    
+    # Check if current_combo exists in at least one study
+    combo_exists <- any(sapply(v$data, function(study_data) {
+      current_combo %in% names(study_data) || 
+        any(grepl(current_combo, names(study_data)))
+    }))
+    
+    if (!combo_exists) {
+      warning("combo_name '", current_combo, "' not found in any study data, skipping...")
+      next
+    }
+    
+    # initialize vars for storing grouping results
+    # only create if data_group doesn't exist
+    meta_str <- paste0('meta_',grouping_var)
+    if (!(meta_str %in% names(v))) {
+      v[[meta_str]] <- list()
+      v[[meta_str]]$data <- list() # store data for each stat + ref type
+      v[[meta_str]]$study <- data.frame(group = character(0), ref = character(0), name = character(0)) # store grouping info
+      v[[meta_str]]$brain_masks <- list()
+    }
+    
+    # for each level of the grouping var (e.g., statistic type, category)
+    for (level in unique(v$study[[grouping_var]])) {
+      
+      # for each reference type
+      for (ref in unique(v$study$ref)) {
         
-        this_meta_label <- paste0(level, "_reference_", ref) # label to refer to this meta-analysis by name
+        matching_idx__study <- which(v$study[[grouping_var]] == level & v$study$ref == ref)
         
-        print(paste0("- ", this_meta_label))
-        
-        # if (!grepl("cognitive", this_meta_label)) {
-        # if (!grepl("", this_meta_label)) {  # do everything
-        # print(paste0("  (Skipping - only doing ", specific_category, ")"))
-        
-        
-        
-        matching_names <- v$study$name[matching_idx__study]
-        matching_idx__data <- which(toupper(names(v$data)) %in% toupper(matching_names))
-        # idx of the studies in d that match the current stat and ref
-
-        # get intersection of all masks
-
-        if (grepl("net", combo_name) | grepl("mv.multi", combo_name)) {
+        if (length(matching_idx__study) > 0) {
           
-          # Make mask from data
-          template_combo_name <- names(v$data[[1]])[grepl(combo_name, names(v$data[[1]]))] # mv combo_names change
-          intersection_mask <- rep(TRUE, length(v$data[[matching_idx__study[1]]][[template_combo_name]]$d))
-          if (length(intersection_mask) == 0) {
-            intersection_mask <- TRUE
-          }
+          this_meta_label <- paste0(level, "_reference_", ref) # label to refer to this meta-analysis by name
           
-        } else {
+          print(paste0("- ", this_meta_label, " (combo: ", current_combo, ")"))
           
-          # Get existing edge- / voxel-level mask
-        
-          intersection_mask <- brain_masks[[v$study$name[matching_idx__study[1]]]]$mask
-          for (this_study in matching_idx__data) {
-            intersection_mask <- intersection_mask & brain_masks[[v$study$name[this_study]]]$mask
-          }
-        }
-
-
-        # Combine data
-
-        # TODO: should actually save all results so data_group fields mirror data_group (e.g., v$data_group$d, v$data_group$r_sq, etc)
-
-        # initialize
-        d__group <- NULL
-        d_se__group <- NULL
-        r_sq__group <- NULL
-        r_sq_se__group <- NULL
-
-        d_sim_ci_lb__group <- NULL
-        d_sim_ci_ub__group <- NULL
-        r_sq_sim_ci_lb__group <- NULL
-        r_sq_sim_ci_ub__group <- NULL
-
-        if (length(matching_idx__data) == 1) { # NO META-ANALYSIS:
-
-          # get individual study effect size, sample size, & ci's
-
-          this_study <- matching_idx__data[1]
+          matching_names <- v$study$name[matching_idx__study]
+          matching_idx__data <- which(toupper(names(v$data)) %in% toupper(matching_names))
           
-          if (grepl("multi",combo_name)) {
-            combo_name_orig <- combo_name
-            combo_name <- names(v$data[[this_study]])[grepl(combo_name_orig, names(v$data[[this_study]]))] # because some are "multi" and some "multi.r" - TODO: check - previous version somehow changed mv.none to mv.multi - check
-          }
-
-          # set up n's for se calc
-
-          this_n_total <- as.numeric(v$data[[this_study]][[combo_name]]$n[1])
-          if (!is.null(this_n_total)) { # correlation, so undefined
-            this_n1 <- this_n_total/2 # TODO: check
-            this_n2 <- this_n_total/2
-            this_n_total <- this_n_total
-          } else {
-            this_n1 <- as.numeric(v$data[[this_study]][[combo_name]]$n1[1])
-            this_n2 <- as.numeric(v$data[[this_study]][[combo_name]]$n2[1])
-            this_n_total <- this_n1 + this_n2
-          }
-
-          d__group <- as.numeric(v$data[[this_study]][[combo_name]]$d) # TODO: for r2, $d -> $R2
-          d_sim_ci_lb__group <- as.numeric(v$data[[this_study]][[combo_name]]$sim_ci_lb)  # TODO: remove all references to CI if we end up using se's
-          d_sim_ci_ub__group <- as.numeric(v$data[[this_study]][[combo_name]]$sim_ci_ub)
-          d_se__group <- d_se(d__group, n1 = this_n1, n2 = this_n2)
-
-          r_sq__group <- as.numeric(v$data[[this_study]][[combo_name]]$r_sq) # TODO: for r2, $d -> $R2
-          r_sq_sim_ci_ub__group <- as.numeric(v$data[[this_study]][[combo_name]]$r_sq_sim_ci_lb)
-          r_sq_sim_ci_lb__group <- as.numeric(v$data[[this_study]][[combo_name]]$r_sq_sim_ci_ub)
-          r_sq_se__group <- r_sq_se(r_sq__group, n = this_n_total)
-
-          print("- single")
+          # get intersection of all masks
           
-          if (grepl("multi",combo_name)) {
-            # go back to the original multivariate combo basename
-            combo_name <- combo_name_orig
-          }
-
-        } else { # META-ANALYSIS:
-
-          # 1. Get individual study effect sizes + sample sizes
-
-          # preallocate to store data across studies
-
-          n_vars_intersection <- sum(intersection_mask)
-
-          d__all <- matrix(NA, nrow = n_vars_intersection, ncol = length(matching_idx__data))
-          d_sim_ci_ub__all <- d__all
-          d_sim_ci_lb__all <- d__all
-          d_se__all <- d__all
-
-          r_sq__all <- d__all
-          r_sq_sim_ci_ub__all <- d__all
-          r_sq_sim_ci_lb__all <- d__all
-          r_sq_se__all <- d__all
-
-          # get data
-
-          it <- 1
-          for (this_study in matching_idx__data) {
+          if (grepl("net", current_combo) | grepl("mv.multi", current_combo)) {
             
-            if (grepl("multi", combo_name)) {
-              # update since the multivariate combo names change for each study - thus we pass a basename for multi
-              combo_name_orig <- combo_name
-              combo_name <- names(v$data[[this_study]])[grepl(combo_name_orig, names(v$data[[this_study]]))] # because some are "multi" and some "multi.r" - TODO: check - previous version somehow changed mv.none to mv.multi - check
+            # Make mask from data
+            template_combo_name <- names(v$data[[1]])[grepl(current_combo, names(v$data[[1]]))]
+            intersection_mask <- rep(TRUE, length(v$data[[matching_idx__study[1]]][[template_combo_name]]$d))
+            if (length(intersection_mask) == 0) {
+              intersection_mask <- TRUE
             }
             
-            # get n's
-
-            this_n_total <- as.numeric(v$data[[this_study]][[combo_name]]$n[1])
-            if (!is.null(this_n_total)) { # correlation, so undefined
+          } else {
+            
+            # Get existing edge- / voxel-level mask
+            intersection_mask <- brain_masks[[v$study$name[matching_idx__study[1]]]]$mask
+            for (this_study in matching_idx__data) {
+              intersection_mask <- intersection_mask & brain_masks[[v$study$name[this_study]]]$mask
+            }
+          }
+          
+          # Combine data
+          
+          # initialize
+          d__group <- NULL
+          d_se__group <- NULL
+          r_sq__group <- NULL
+          r_sq_se__group <- NULL
+          
+          d_sim_ci_lb__group <- NULL
+          d_sim_ci_ub__group <- NULL
+          r_sq_sim_ci_lb__group <- NULL
+          r_sq_sim_ci_ub__group <- NULL
+          
+          if (length(matching_idx__data) == 1) { # NO META-ANALYSIS:
+            
+            # get individual study effect size, sample size, & ci's
+            
+            this_study <- matching_idx__data[1]
+            
+            # Handle combo name resolution for multi cases
+            working_combo_name <- current_combo
+            if (grepl("multi", current_combo)) {
+              matching_combos <- names(v$data[[this_study]])[grepl(current_combo, names(v$data[[this_study]]))]
+              if (length(matching_combos) > 0) {
+                working_combo_name <- matching_combos[1]
+              }
+            }
+            
+            # Check if the combo exists in this study
+            if (!working_combo_name %in% names(v$data[[this_study]])) {
+              warning("Combo '", working_combo_name, "' not found in study ", this_study, ", skipping...")
+              next
+            }
+            
+            # set up n's for se calc
+            this_n_total <- as.numeric(v$data[[this_study]][[working_combo_name]]$n[1])
+            if (!is.null(this_n_total) && !is.na(this_n_total)) {
               this_n1 <- this_n_total/2
               this_n2 <- this_n_total/2
               this_n_total <- this_n_total
             } else {
-              this_n1 <- as.numeric(v$data[[this_study]][[combo_name]]$n1[1])
-              this_n2 <- as.numeric(v$data[[this_study]][[combo_name]]$n2[1])
+              this_n1 <- as.numeric(v$data[[this_study]][[working_combo_name]]$n1[1])
+              this_n2 <- as.numeric(v$data[[this_study]][[working_combo_name]]$n2[1])
               this_n_total <- this_n1 + this_n2
             }
-
-            this_d <- as.numeric(v$data[[this_study]][[combo_name]]$d)
-            this_d_sim_ci_lb <- as.numeric(v$data[[this_study]][[combo_name]]$sim_ci_lb)
-            this_d_sim_ci_ub <- as.numeric(v$data[[this_study]][[combo_name]]$sim_ci_ub)
-
-            this_r_sq <- as.numeric(v$data[[this_study]][[combo_name]]$r_sq)
-            this_r_sq_sim_ci_lb <- as.numeric(v$data[[this_study]][[combo_name]]$r_sq_sim_ci_lb)
-            this_r_sq_sim_ci_ub <- as.numeric(v$data[[this_study]][[combo_name]]$r_sq_sim_ci_ub)
-
-            this_d_se <- d_se(this_d, n1 = this_n1, n2 = this_n2)
-            this_r_sq_se <- r_sq_se(this_r_sq, n = this_n_total)
-
-            # make vector for indexing that combines d_mask (1D) and intersection_mask (2D/3D)
-            #   mask_of_masks is a 1D that is as long as d_mask,
-            #   but only has 1's where effects exist across studies (i.e., where there are 1's in intersection_mask)
-            #   -> this lets us grab effects only where they exist across studies
-
-            if (grepl("net", combo_name) | grepl("multi", combo_name)) {
-              mask_of_masks <- intersection_mask
-            } else {
-              d_mask <- brain_masks[[v$study$name[this_study]]]$mask
-              mask_of_masks <- intersection_mask[d_mask == 1]
-            }
-
-            this_d <- this_d[mask_of_masks]
-            this_d_sim_ci_lb <- this_d_sim_ci_lb[mask_of_masks]
-            this_d_sim_ci_ub <- this_d_sim_ci_ub[mask_of_masks]
-
-            this_r_sq <- this_r_sq[mask_of_masks]
-            this_r_sq_sim_ci_lb <- this_r_sq_sim_ci_lb[mask_of_masks]
-            this_r_sq_sim_ci_ub <- this_r_sq_sim_ci_ub[mask_of_masks]
-
-            this_d_se <- this_d_se[mask_of_masks]
-            this_r_sq_se <- this_r_sq_se[mask_of_masks]
-
-            # append to total
-
-            d__all[, it] <- this_d
-            d_sim_ci_lb__all[, it] <- this_d_sim_ci_lb
-            d_sim_ci_ub__all[, it] <- this_d_sim_ci_ub
-            d_se__all[, it] <- this_d_se
-
-            r_sq__all[, it] <- this_r_sq
-            r_sq_sim_ci_lb__all[, it] <- this_r_sq_sim_ci_lb
-            r_sq_sim_ci_ub__all[, it] <- this_r_sq_sim_ci_ub
-            r_sq_se__all[, it] <- this_r_sq_se
-
-            it <- it + 1
             
-            if (grepl("multi",combo_name)) {
-              # go back to the original multivariate combo basename
-              combo_name <- combo_name_orig
+            d__group <- as.numeric(v$data[[this_study]][[working_combo_name]]$d)
+            d_sim_ci_lb__group <- as.numeric(v$data[[this_study]][[working_combo_name]]$sim_ci_lb)
+            d_sim_ci_ub__group <- as.numeric(v$data[[this_study]][[working_combo_name]]$sim_ci_ub)
+            d_se__group <- d_se(d__group, n1 = this_n1, n2 = this_n2)
+            
+            r_sq__group <- as.numeric(v$data[[this_study]][[working_combo_name]]$r_sq)
+            r_sq_sim_ci_ub__group <- as.numeric(v$data[[this_study]][[working_combo_name]]$r_sq_sim_ci_lb)
+            r_sq_sim_ci_lb__group <- as.numeric(v$data[[this_study]][[working_combo_name]]$r_sq_sim_ci_ub)
+            r_sq_se__group <- r_sq_se(r_sq__group, n = this_n_total)
+            
+            print("- single")
+            
+          } else { # META-ANALYSIS:
+            
+            # 1. Get individual study effect sizes + sample sizes
+            
+            n_vars_intersection <- sum(intersection_mask)
+            
+            d__all <- matrix(NA, nrow = n_vars_intersection, ncol = length(matching_idx__data))
+            d_sim_ci_ub__all <- d__all
+            d_sim_ci_lb__all <- d__all
+            d_se__all <- d__all
+            
+            r_sq__all <- d__all
+            r_sq_sim_ci_ub__all <- d__all
+            r_sq_sim_ci_lb__all <- d__all
+            r_sq_se__all <- d__all
+            
+            # get data
+            it <- 1
+            for (this_study in matching_idx__data) {
+              
+              # Handle combo name resolution for multi cases
+              working_combo_name <- current_combo
+              if (grepl("multi", current_combo)) {
+                matching_combos <- names(v$data[[this_study]])[grepl(current_combo, names(v$data[[this_study]]))]
+                if (length(matching_combos) > 0) {
+                  working_combo_name <- matching_combos[1]
+                }
+              }
+              
+              # Check if the combo exists in this study
+              if (!working_combo_name %in% names(v$data[[this_study]])) {
+                warning("Combo '", working_combo_name, "' not found in study ", this_study, ", skipping...")
+                next
+              }
+              
+              # get n's
+              this_n_total <- as.numeric(v$data[[this_study]][[working_combo_name]]$n[1])
+              if (!is.null(this_n_total) && !is.na(this_n_total)) {
+                this_n1 <- this_n_total/2
+                this_n2 <- this_n_total/2
+                this_n_total <- this_n_total
+              } else {
+                this_n1 <- as.numeric(v$data[[this_study]][[working_combo_name]]$n1[1])
+                this_n2 <- as.numeric(v$data[[this_study]][[working_combo_name]]$n2[1])
+                this_n_total <- this_n1 + this_n2
+              }
+              
+              this_d <- as.numeric(v$data[[this_study]][[working_combo_name]]$d)
+              this_d_sim_ci_lb <- as.numeric(v$data[[this_study]][[working_combo_name]]$sim_ci_lb)
+              this_d_sim_ci_ub <- as.numeric(v$data[[this_study]][[working_combo_name]]$sim_ci_ub)
+              
+              this_r_sq <- as.numeric(v$data[[this_study]][[working_combo_name]]$r_sq)
+              this_r_sq_sim_ci_lb <- as.numeric(v$data[[this_study]][[working_combo_name]]$r_sq_sim_ci_lb)
+              this_r_sq_sim_ci_ub <- as.numeric(v$data[[this_study]][[working_combo_name]]$r_sq_sim_ci_ub)
+              
+              this_d_se <- d_se(this_d, n1 = this_n1, n2 = this_n2)
+              this_r_sq_se <- r_sq_se(this_r_sq, n = this_n_total)
+              
+              # make vector for indexing
+              if (grepl("net", current_combo) | grepl("multi", current_combo)) {
+                mask_of_masks <- intersection_mask
+              } else {
+                d_mask <- brain_masks[[v$study$name[this_study]]]$mask
+                mask_of_masks <- intersection_mask[d_mask == 1]
+              }
+              
+              this_d <- this_d[mask_of_masks]
+              this_d_sim_ci_lb <- this_d_sim_ci_lb[mask_of_masks]
+              this_d_sim_ci_ub <- this_d_sim_ci_ub[mask_of_masks]
+              
+              this_r_sq <- this_r_sq[mask_of_masks]
+              this_r_sq_sim_ci_lb <- this_r_sq_sim_ci_lb[mask_of_masks]
+              this_r_sq_sim_ci_ub <- this_r_sq_sim_ci_ub[mask_of_masks]
+              
+              this_d_se <- this_d_se[mask_of_masks]
+              this_r_sq_se <- this_r_sq_se[mask_of_masks]
+              
+              # append to total
+              d__all[, it] <- this_d
+              d_sim_ci_lb__all[, it] <- this_d_sim_ci_lb
+              d_sim_ci_ub__all[, it] <- this_d_sim_ci_ub
+              d_se__all[, it] <- this_d_se
+              
+              r_sq__all[, it] <- this_r_sq
+              r_sq_sim_ci_lb__all[, it] <- this_r_sq_sim_ci_lb
+              r_sq_sim_ci_ub__all[, it] <- this_r_sq_sim_ci_ub
+              r_sq_se__all[, it] <- this_r_sq_se
+              
+              it <- it + 1
             }
-
+            
+            # 2. Meta analysis
+            
+            # preallocate to store results
+            n_vars <- dim(d__all)[1]
+            
+            d__group <- numeric(n_vars)
+            d_sim_ci_lb__group <- d__group
+            d_sim_ci_ub__group <- d__group
+            
+            r_sq__group <- d__group
+            r_sq_sim_ci_lb__group <- d__group
+            r_sq_sim_ci_ub__group <- d__group
+            
+            ci_level <- 1 - (0.05 / n_vars) # confidence level for simultaneous CIs
+            
+            start_time <- Sys.time()
+            
+            for (this_variable in 1:n_vars) {
+              
+              if (testing) { # simple mean
+                
+                d__group[this_variable] <- mean(d__all[this_variable,], na.rm = TRUE)
+                d_sim_ci_lb__group[this_variable] <- mean(d_sim_ci_lb__all[this_variable,], na.rm = TRUE)
+                d_sim_ci_ub__group[this_variable] <- mean(d_sim_ci_ub__all[this_variable,], na.rm = TRUE)
+                
+                r_sq__group[this_variable] <- mean(r_sq__all[this_variable,], na.rm = TRUE)
+                r_sq_sim_ci_lb__group[this_variable] <- mean(r_sq_sim_ci_lb__all[this_variable,], na.rm = TRUE)
+                r_sq_sim_ci_ub__group[this_variable] <- mean(r_sq_sim_ci_ub__all[this_variable,], na.rm = TRUE)
+                
+              } else { # meta-analysis
+                
+                optimizers <- c("nlminb", "Nelder-Mead", "BFGS", "bobyqa","nloptr","nlm","hjk")
+                
+                # For d: do meta only if not empty or NA; otherwise set NA
+                if (length(d__all[this_variable,]) == 0 || length(d_se__all[this_variable,]) == 0 || 
+                    all(is.na(d__all[this_variable,])) || all(is.na(d_se__all[this_variable,]))) {
+                  d__group[this_variable] <- NA
+                  d_sim_ci_lb__group[this_variable] <- NA
+                  d_sim_ci_ub__group[this_variable] <- NA
+                  
+                } else { # do meta
+                  
+                  d_meta_analysis <- NULL
+                  
+                  # nested by dataset
+                  df <- data.frame(
+                    yi = d__all[this_variable,], 
+                    vi = d_se__all[this_variable,]^2, 
+                    dataset = v$study$dataset[matching_idx__study], 
+                    name = v$study$name[matching_idx__study]
+                  )
+                  
+                  for (opt in optimizers) {
+                    d_meta_analysis <- tryCatch(
+                      rma.mv(yi = yi, V = vi, data = df, slab = dataset, level = ci_level, 
+                             random = ~1 | dataset / name, control=list(optimizer=opt)),
+                      error = function(e) NULL                           
+                    )
+                    if (!is.null(d_meta_analysis)) {
+                      break
+                    }
+                  }
+                  
+                  if (!is.null(d_meta_analysis)) {
+                    d__group[this_variable] <- d_meta_analysis$b
+                    d_sim_ci_lb__group[this_variable] <- d_meta_analysis$ci.lb
+                    d_sim_ci_ub__group[this_variable] <- d_meta_analysis$ci.ub
+                  } else {
+                    d__group[this_variable] <- NA
+                    d_sim_ci_lb__group[this_variable] <- NA
+                    d_sim_ci_ub__group[this_variable] <- NA
+                  }
+                }
+                
+                # For r_sq: similar logic
+                if (length(r_sq__all[this_variable,]) == 0 || length(r_sq_se__all[this_variable,]) == 0 || 
+                    all(is.na(r_sq__all[this_variable,])) || all(is.na(r_sq_se__all[this_variable,]))) {
+                  r_sq__group[this_variable] <- NA
+                  r_sq_sim_ci_lb__group[this_variable] <- NA
+                  r_sq_sim_ci_ub__group[this_variable] <- NA
+                  
+                } else {
+                  
+                  r_sq_meta_analysis <- NULL
+                  
+                  # nested by dataset
+                  df <- data.frame(
+                    yi = r_sq__all[this_variable,], 
+                    vi = r_sq_se__all[this_variable,]^2, 
+                    dataset = v$study$dataset[matching_idx__study], 
+                    name = v$study$name[matching_idx__study]
+                  )
+                  
+                  for (opt in optimizers) {
+                    r_sq_meta_analysis <- tryCatch(
+                      rma.mv(yi = yi, V = vi, data = df, slab = dataset, level = ci_level, 
+                             random = ~1 | dataset / name, control=list(optimizer=opt)),
+                      error = function(e) NULL                           
+                    )
+                    if (!is.null(r_sq_meta_analysis)) {
+                      break
+                    }
+                  }
+                  
+                  if (!is.null(r_sq_meta_analysis)) {
+                    r_sq__group[this_variable] <- r_sq_meta_analysis$b
+                    r_sq_sim_ci_lb__group[this_variable] <- r_sq_meta_analysis$ci.lb
+                    r_sq_sim_ci_ub__group[this_variable] <- r_sq_meta_analysis$ci.ub
+                  } else {
+                    r_sq__group[this_variable] <- NA
+                    r_sq_sim_ci_lb__group[this_variable] <- NA
+                    r_sq_sim_ci_ub__group[this_variable] <- NA
+                  }
+                }
+              }
+            }
+            elapsed_time <- Sys.time() - start_time
+            print(elapsed_time)
           }
           
-
-          # 2. Meta analysis
-
-          # preallocate to store results
-
-          n_vars <- dim(d__all)[1]
-
-          d__group <- numeric(n_vars)
-          d_sim_ci_lb__group <- d__group
-          d_sim_ci_ub__group <- d__group
-          # d_se__group <- d__group
-
-          r_sq__group <- d__group
-          r_sq_sim_ci_lb__group <- d__group
-          r_sq_sim_ci_ub__group <- d__group
-          # r_sq_se__group <- d__group
-
-          ci_level <- 1 - (0.05 / n_vars) # confidence level for simultaneous CIs
-
-          start_time <- Sys.time()
-
-          for (this_variable in 1:n_vars) {
-
-            if (testing) { # simple mean
-
-              d__group[this_variable] <- mean(d__all[this_variable,])
-              d_sim_ci_lb__group[this_variable] <- mean(d_sim_ci_lb__all[this_variable,])
-              d_sim_ci_ub__group[this_variable] <- mean(d_sim_ci_ub__all[this_variable,])
-
-              r_sq__group[this_variable] <- mean(r_sq__all[this_variable,])
-              r_sq_sim_ci_lb__group[this_variable] <- mean(r_sq_sim_ci_lb__all[this_variable,])
-              r_sq_sim_ci_ub__group[this_variable] <- mean(r_sq_sim_ci_ub__all[this_variable,])
-
-            } else { # meta-analysis
-
-              optimizers <- c("nlminb", "Nelder-Mead", "BFGS", "bobyqa","nloptr","nlm","hjk") # TODO: check how often this is needed
-              
-              # For d: do meta only if not empty or NA; otherwise set NA
-
-              if (length(d__all[this_variable,]) == 0 || length(d_se__all[this_variable,]) == 0 || all(is.na(d__all[this_variable,])) || all(is.na(d_se__all[this_variable,]))) {
-                d__group[this_variable] <- NA
-                d_sim_ci_lb__group[this_variable] <- NA
-                d_sim_ci_ub__group[this_variable] <- NA
-
-              } else { # do meta
-
-                d_meta_analysis <- NULL
-                # d_meta_analysis <- rma.uni(yi = d__all[this_variable,], se = d_se__all[this_variable,], method = c("REML","DL"), level = ci_level) # added alternative closed form method in case REML doesn't converge
-                # d_meta_analysis <- rma.uni(yi = d__all[this_variable,], se = d_se__all[this_variable,], method = "REML", control=list(stepadj=0.5, maxiter=1000)) # added control to help with convergence
-                
-                # nested by dataset
-                df <- data.frame(yi = d__all[this_variable,], vi = d_se__all[this_variable,]^2, dataset = v$study$dataset[matching_idx__study], name = v$study$name[matching_idx__study])
-                # d_meta_analysis <- rma.mv(yi = yi, V = vi, data = df, slab = dataset, level = ci_level, random = ~1 | dataset / name) # https://bookdown.org/MathiasHarrer/Doing_Meta_Analysis_in_R/multilevel-ma.html # added alternative closed form method in case REML doesn't converge
-                for (opt in optimizers) {
-                  d_meta_analysis <- tryCatch(
-                    rma.mv(yi = yi, V = vi, data = df, slab = dataset, level = ci_level, random = ~1 | dataset / name, control=list(optimizer=opt)), # https://bookdown.org/MathiasHarrer/Doing_Meta_Analysis_in_R/multilevel-ma.html # added alternative closed form method in case REML doesn't converge
-                    error = function(e) NULL                           
-                  )
-                  if (!is.null(d_meta_analysis)) {
-                    break
-                  }
-                }
-                
-                d__group[this_variable] <- d_meta_analysis$b
-
-                # this_ci <- confint(d_meta_analysis, level = ci_level)
-                # d_sim_ci_lb__group[this_variable] <- this_ci$ci.lb
-                # d_sim_ci_ub__group[this_variable] <- this_ci$ci.ub
-                d_sim_ci_lb__group[this_variable] <- d_meta_analysis$ci.lb # TODO: here and below - re-specify alpha/n_vars for corrected CI
-                d_sim_ci_ub__group[this_variable] <- d_meta_analysis$ci.ub
-              }
-
-              # For r_sq: do meta only if not empty or NA; otherwise set NA
-
-              if (length(r_sq__all[this_variable,]) == 0 || length(r_sq_se__all[this_variable,]) == 0 || all(is.na(r_sq__all[this_variable,])) || all(is.na(r_sq_se__all[this_variable,]))) {
-                r_sq__group[this_variable] <- NA
-                r_sq_sim_ci_lb__group[this_variable] <- NA
-                r_sq_sim_ci_ub__group[this_variable] <- NA
-
-              } else {
-
-                r_sq_meta_analysis <- NULL
-                # r_sq_meta_analysis <- rma.uni(yi = r_sq__all[this_variable,], se = r_sq_se__all[this_variable,], method = c("REML","DL"), level = ci_level) # added alternative closed form method in case REML doesn't converge
-                # r_sq_meta_analysis <- rma.uni(yi = r_sq__all[this_variable,], se = r_sq_se__all[this_variable,], method = "REML", control=list(stepadj=0.5, maxiter=1000))
-
-                # nested by dataset
-                df <- data.frame(yi = r_sq__all[this_variable,], vi = r_sq_se__all[this_variable,]^2, dataset = v$study$dataset[matching_idx__study], name = v$study$name[matching_idx__study])
-                for (opt in optimizers) {
-                  r_sq_meta_analysis <- tryCatch(
-                    rma.mv(yi = yi, V = vi, data = df, slab = dataset, level = ci_level, random = ~1 | dataset / name, control=list(optimizer=opt)), # https://bookdown.org/MathiasHarrer/Doing_Meta_Analysis_in_R/multilevel-ma.html # added alternative closed form method in case REML doesn't converge
-                    error = function(e) NULL                           
-                  )
-                  if (!is.null(r_sq_meta_analysis)) {
-                    break
-                  }
-                }
-
-                r_sq__group[this_variable] <- r_sq_meta_analysis$b
-
-                # this_ci <- confint(r_sq_meta_analysis, level = ci_level)
-                # r_sq_sim_ci_lb__group[this_variable] <- this_ci$ci.lb
-                # r_sq_sim_ci_ub__group[this_variable] <- this_ci$ci.ub
-                r_sq_sim_ci_lb__group[this_variable] <- r_sq_meta_analysis$ci.lb
-                r_sq_sim_ci_ub__group[this_variable] <- r_sq_meta_analysis$ci.ub
-              }
-
-            }
-
-          }
-          elapsed_time <- Sys.time() - start_time
-          print(elapsed_time)
-        }
-
-
-        # remove values from indices that are zero in d_total, sim_ci_lb_total, and sim_ci_ub_total
-
-
-        # TODO: necessary? we already do the intersection mask. (do we get enough 0's to worry, esp in activation?)
-        zero_idx <- which((d__group == 0) & (d_sim_ci_lb__group == 0) & (d_sim_ci_ub__group == 0))
-        r_sq_zero_idx <- which((r_sq__group == 0) & (r_sq_sim_ci_lb__group == 0) & (r_sq_sim_ci_ub__group == 0))
-
-        # TODO: not sure we want this, after all the masking - if so, keep a new mask
-
-        if (length(zero_idx) > 0) {
-          if (testing) {
+          # remove values from indices that are zero
+          zero_idx <- which((d__group == 0) & (d_sim_ci_lb__group == 0) & (d_sim_ci_ub__group == 0))
+          r_sq_zero_idx <- which((r_sq__group == 0) & (r_sq_sim_ci_lb__group == 0) & (r_sq_sim_ci_ub__group == 0))
+          
+          if (length(zero_idx) > 0 && testing) {
             d__group <- d__group[-zero_idx]
-            # d_se__group <- d_se__group[-zero_idx]
             d_sim_ci_lb__group <- d_sim_ci_lb__group[-zero_idx]
             d_sim_ci_ub__group <- d_sim_ci_ub__group[-zero_idx]
           }
-
-        }
-        if (length(r_sq_zero_idx) > 0) {
-          if (testing) {
-            r_sq__group <- r_sq__group[-zero_idx]
-            # r_sq_se__group <- r_sq_se__group[-zero_idx]
-            r_sq_sim_ci_lb__group <- r_sq_sim_ci_lb__group[-zero_idx]
-            r_sq_sim_ci_ub__group <- r_sq_sim_ci_ub__group[-zero_idx]
+          
+          if (length(r_sq_zero_idx) > 0 && testing) {
+            r_sq__group <- r_sq__group[-r_sq_zero_idx]
+            r_sq_sim_ci_lb__group <- r_sq_sim_ci_lb__group[-r_sq_zero_idx]
+            r_sq_sim_ci_ub__group <- r_sq_sim_ci_ub__group[-r_sq_zero_idx]
           }
+          
+          # store results - use current_combo as the key
+          v[[meta_str]]$data[[this_meta_label]][[current_combo]]$d <- d__group
+          v[[meta_str]]$data[[this_meta_label]][[current_combo]]$r_sq <- r_sq__group
+          v[[meta_str]]$data[[this_meta_label]][[current_combo]]$sim_ci_lb <- d_sim_ci_lb__group
+          v[[meta_str]]$data[[this_meta_label]][[current_combo]]$sim_ci_ub <- d_sim_ci_ub__group
+          v[[meta_str]]$data[[this_meta_label]][[current_combo]]$r_sq_sim_ci_lb <- r_sq_sim_ci_lb__group
+          v[[meta_str]]$data[[this_meta_label]][[current_combo]]$r_sq_sim_ci_ub <- r_sq_sim_ci_ub__group
+          
+          # store the study info (only once per level/ref combination)
+          existing_entry <- which(v[[meta_str]]$study$group_level == level & v[[meta_str]]$study$ref == ref)
+          if (length(existing_entry) == 0) {
+            v[[meta_str]]$study <- rbind(v[[meta_str]]$study, 
+                                         data.frame(group_level = level, ref = ref, name = this_meta_label))
+          }
+          
+          # store intersection masks
+          v[[meta_str]]$brain_masks[[this_meta_label]][[current_combo]]$mask <- intersection_mask
+          v[[meta_str]]$brain_masks[[this_meta_label]][[current_combo]]$mask_type <- "intersection"
         }
-
-        # store d_avg, sim_ci_lb_avg, and sim_ci_ub_avg in data_group list as a list
-        
-        v[[meta_str]]$data[[this_meta_label]][[combo_name]]$d <- d__group
-        # v[[meta_str]]$data[[this_meta_label]][[combo_name]]$se <- d_se__group
-
-        v[[meta_str]]$data[[this_meta_label]][[combo_name]]$r_sq <- r_sq__group
-        # v[[meta_str]]$data[[this_meta_label]][[combo_name]]$r_sq_se <- r_sq_se__group
-
-        v[[meta_str]]$data[[this_meta_label]][[combo_name]]$sim_ci_lb <- d_sim_ci_lb__group
-        v[[meta_str]]$data[[this_meta_label]][[combo_name]]$sim_ci_ub <- d_sim_ci_ub__group
-        v[[meta_str]]$data[[this_meta_label]][[combo_name]]$r_sq_sim_ci_lb <- r_sq_sim_ci_lb__group
-        v[[meta_str]]$data[[this_meta_label]][[combo_name]]$r_sq_sim_ci_ub <- r_sq_sim_ci_ub__group
-
-        # store the study info in the study_stat dataframe
-
-        v[[meta_str]]$study <- rbind(v[[meta_str]]$study, data.frame(group_level = level, ref = ref, name = this_meta_label))
-
-        # store intersection masks
-
-        # TODO: pass this up through plotter for visualization
-        v[[meta_str]]$brain_masks[[this_meta_label]][[combo_name]]$mask <- intersection_mask
-        v[[meta_str]]$brain_masks[[this_meta_label]][[combo_name]]$mask_type <- "intersection"
-
-        
       }
     }
-  }
-
+  } # End of combo_names loop
+  
   return(v)
-
-
 }
-
