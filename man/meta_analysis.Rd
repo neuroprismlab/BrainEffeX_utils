@@ -23,6 +23,6 @@ This function plots effect sizes (Cohen's d or R-squared) and simulated confiden
 for a given dataset. It allows optional grouping, visualization, and file saving.
 }
 \examples{
-Example usage
+# Example usage
 meta_analysis(v,v$brain_masks, "pooling.none.motion.none.mv.none")
 }

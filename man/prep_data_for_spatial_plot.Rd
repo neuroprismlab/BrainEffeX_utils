@@ -37,7 +37,7 @@ A plot visualizing effect sizes and simulated CIs.
 This function prepares a given study for effect size plots.
 }
 \examples{
-Example usage
+# Example usage
 pd <- prep_data_for_spatial_plot(data = v$data[[i]], 
 study_details = v$study[i, ], plot_info$grouping_var='none',
 combo_name = "pooling.none.motion.none.mv.none", 

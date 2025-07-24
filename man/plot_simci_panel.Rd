@@ -24,6 +24,6 @@ A ggplot object containing one or overlapping densities
 Function: Plot Simultaeous CIs
 }
 \examples{
-Example usage
+# Example usage
 plot_simci_panel(plot_data)
 }

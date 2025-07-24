@@ -24,6 +24,6 @@ A ggplot object containing one or overlapping densities
 Function: Plot Densities
 }
 \examples{
-Example usage
+# Example usage
 plot_density_panel(plot_data)
 }

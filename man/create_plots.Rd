@@ -45,6 +45,6 @@ This function is the master plotter for making effect size plots for individual
 studies, overlapping studies, or meta-analytic results.
 }
 \examples{
-Example usage
+# Example usage
 create_plots(pd)
 }

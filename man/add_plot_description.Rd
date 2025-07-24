@@ -20,6 +20,6 @@ A ggplot object with summary labels.
 This function adds summary labels to a ggplot object.
 }
 \examples{
-Example usage
+# Example usage
 add_plot_description(p, pp, study_details, extra_study_details)
 }

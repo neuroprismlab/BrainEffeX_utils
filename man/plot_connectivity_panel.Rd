@@ -24,6 +24,6 @@ A ggplot object containing one or overlapping densities
 Function: Plot Connectivity Maps
 }
 \examples{
-Example usage
+# Example usage
 plot_connectivity_panel(plot_data)
 }

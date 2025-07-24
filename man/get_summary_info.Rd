@@ -20,6 +20,6 @@ A ggplot object with summary labels.
 This function gets summary info to a ggplot object.
 }
 \examples{
-Example usage
+# Example usage
 get_summary_info(pp, study_details, extra_study_details)
 }

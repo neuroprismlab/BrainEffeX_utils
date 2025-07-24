@@ -24,6 +24,6 @@ A ggplot object containing one or overlapping densities
 Function: Plot Voxel-level Activation Maps
 }
 \examples{
-Example usage
+# Example usage
 plot_activation_maps(plot_data)
 }
