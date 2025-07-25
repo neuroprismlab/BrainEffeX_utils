@@ -343,7 +343,7 @@ plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
 
 
   # get template for later data->nifti
-  template <- readNIfTI(system.file("inst/extdata/plotting/template_nifti.nii.gz", package = "BrainEffeX.utils"))  # assumes MNI - TODO: get actual ref
+  template <- readNIfTI(system.file("extdata/plotting/template_nifti.nii.gz", package = "BrainEffeX.utils"))  # assumes MNI - TODO: get actual ref
 
   # make plot object
   # p <- ggplot()
@@ -363,7 +363,7 @@ plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
       }
       
       if (length(data) == 10) { # need atlas for network-level - currently Shen only - TODO: un-hard-code and pass the actual atlas
-        atlas <- readNIfTI(system.file("inst/extdata/parcellations/shen_2mm_268_parcellation__in_subnetworks.nii.gz", package = "BrainEffeX.utils"))
+        atlas <- readNIfTI(system.file("extdata/parcellations/shen_2mm_268_parcellation__in_subnetworks.nii.gz", package = "BrainEffeX.utils"))
         for (j in 1:10) {
           atlas@.Data[atlas@.Data == j] <- data[j]
         }
@@ -576,13 +576,13 @@ plot_connectivity_panel <- function(pp, plot_data_list, threshold_category = NA)
 
     if (plot_data_list[[i]]$extra_study_details$ref[[1]] == "shen_268"){
       # if (plot_data_list[[i]]$study_details$ref == "net") { # TODO: get this input and finish this for pooling=net
-      #   mapping_path <- "inst/data/parcellations/map268_subnetwork.csv"
+      #   mapping_path <- "extdata/parcellations/map268_subnetwork.csv"
       #   pooled <- TRUE
       # } else { # unpooled
-      mapping_path <-  system.file("inst/extdata/parcellations/map268_subnetwork.csv", package = "BrainEffeX.utils")
+      mapping_path <-  system.file("extdata/parcellations/map268_subnetwork.csv", package = "BrainEffeX.utils")
       # }
     } else if (plot_data_list[[i]]$extra_study_details$ref[[1]] == "ukb_55") {
-      mapping_path <- system.file("inst/extdata/parcellations/map55_ukb.csv", package = "BrainEffeX.utils")
+      mapping_path <- system.file("extdata/parcellations/map55_ukb.csv", package = "BrainEffeX.utils")
     } else {
       mapping_path <- NA
     }
