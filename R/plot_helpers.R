@@ -334,8 +334,8 @@ plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
   pp$ncolors <- 40 # also controls number of ticks on colorbar
   # pp$col_y <- colorspace::diverge_hsv(pp$ncol)
   # pp$n_colorbar_ticks <- 5
-  pp$ycolorbar <- TRUE
-  pp$colorbar_text_size <- 0.9
+  pp$ycolorbar <- FALSE
+  pp$colorbar_text_size <- 1.8
   pp$mfrow <- c(1,3) #c(3, 1)
   pp$xCoord <- 30
   pp$yCoord <- 30
@@ -401,7 +401,7 @@ plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
       # p <- grid.grabExpr({
 
       if (pp$do_static_figs) {
-        png("ortho_tmp.png", width = 800, height = 800)
+        png("ortho_tmp.png", width = 1100, height = 800)
       }
       
       # hallee's
@@ -428,7 +428,8 @@ plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
         ybreaks = ybreaks,
         ycolorbar = pp$ycolorbar,
         mfrow = pp$mfrow,
-        zlim = pp$zlim_range # TODO: check
+        zlim = pp$zlim_range, # TODO: check
+        oma = c(0,0,0,8)
       )
       
       n_breaks <- 10 # hallee's
@@ -509,6 +510,7 @@ colorbar_custom <- function(breaks, #the minimum and maximum z values for which
     par(starting.par.settings)
   })
   mai <- par("mai")
+  mai[4] <- max(mai[4], 1.2)
   fin <- par("fin")
   rat = mai[4]/fin[1]
   rat = max(rat, 1 - maxleft)
@@ -1031,65 +1033,66 @@ plot_power_panel <- function(pp, plot_data_list, output_type, use_category_bins 
 #' get_summary_info(pp, study_details, extra_study_details)
 #' }
 get_summary_info <- function(study_details, extra_study_details) {
-
+  
   summary_info <- list()
-
-  summary_info$grouping_var_title <- switch(extra_study_details$grouping_var, # TODO: move w other pp but beware that singles may not have defined
-                                  "none" = "None",
-                                  "orig_stat_type" = "Statistic",
-                                  "category" = "Outcome Measure")
-
+  
+  summary_info$grouping_var_title <- switch(extra_study_details$grouping_var,
+                                            "none" = "None",
+                                            "orig_stat_type" = "Statistic", 
+                                            "category" = "Outcome Measure")
+  
   # set text
-
   summary_info$bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_estimate, "\n",
-                        "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%")
-
+                                     "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%")
+  
   if (extra_study_details$grouping_var == 'none') {
-
+    
     summary_info$title_text <- paste0("Dataset: ", study_details$dataset, "   |  ",
-                         "Test: ", study_details$orig_stat_type, ": ", study_details$test_component_1, ", ", study_details$test_component_2, "   |   ",
-                         "Sample Size: ", extra_study_details$n_title, "   |  ",
-                         "Map: ", study_details$map_type)
-
-    # if field cons_mv_estimate exists in extra_study_details_multi, add to bottom text
-    if ("mv_estimate" %in% names(extra_study_details)) {
+                                      "Test: ", study_details$orig_stat_type, ": ", study_details$test_component_1, ", ", study_details$test_component_2, "   |   ",
+                                      "Sample Size: ", extra_study_details$n_title, "   |  ",
+                                      "Map: ", study_details$map_type)
+    
+    # NULL-safe check for mv_estimate and mv_ci
+    if ("mv_estimate" %in% names(extra_study_details) && 
+        !is.null(extra_study_details$mv_estimate) && 
+        !is.na(extra_study_details$mv_estimate) &&
+        "mv_ci" %in% names(extra_study_details) &&
+        !is.null(extra_study_details$mv_ci) &&
+        length(extra_study_details$mv_ci) >= 2 &&
+        !any(is.na(extra_study_details$mv_ci))) {
+      
       summary_info$bottom_text <- paste0(summary_info$bottom_text,"\n",
-                            "Multivariate effect size: ", round(extra_study_details$mv_estimate, 2), " [", round(extra_study_details$mv_ci[1], 2), ", ", round(extra_study_details$mv_ci[2], 2), "]")
-      # bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
-      #                       "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%\n",
-      #                       "Multivariate effect size: ", round(extra_study_details$mv_estimate, 2), " [", round(extra_study_details$mv_ci[1], 2), ", ", round(extra_study_details$mv_ci[2], 2), "]")
+                                         "Multivariate effect size: ", round(extra_study_details$mv_estimate, 2), 
+                                         " [", round(extra_study_details$mv_ci[1], 2), ", ", round(extra_study_details$mv_ci[2], 2), "]")
     }
-
+    
   } else {
-
+    
     summary_info$title_text <- paste0(summary_info$grouping_var_title, ": ", extra_study_details$group_level, "   |  ",
-                         "Reference Space: ", extra_study_details$ref)
-
-    # if field cons_mv_estimate exists in extra_study_details_multi, add to bottom text # TODO: currently not defined when using group_data
+                                      "Reference Space: ", extra_study_details$ref)
     
-    if ("mv_estimate" %in% names(extra_study_details)) { # meta
+    # NULL-safe check for mv_estimate (meta case)
+    if ("mv_estimate" %in% names(extra_study_details) && 
+        !is.null(extra_study_details$mv_estimate) && 
+        !is.na(extra_study_details$mv_estimate) &&
+        "mv_ci" %in% names(extra_study_details) &&
+        !is.null(extra_study_details$mv_ci) &&
+        length(extra_study_details$mv_ci) >= 2 &&
+        !any(is.na(extra_study_details$mv_ci))) {
       
       summary_info$bottom_text <- paste0(summary_info$bottom_text,"\n",
-                             "Multivariate effect size: ", round(extra_study_details$mv_estimate, 2), " [", round(extra_study_details$mv_ci[1], 2), ", ", round(extra_study_details$mv_ci[2], 2), "]")
-      # bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
-      #                       "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%\n",
-      #                       "Multivariate effect size: ", round(extra_study_details$mv_estimate, 2), " [", round(extra_study_details$mv_ci[1], 2), ", ", round(extra_study_details$mv_ci[2], 2), "]")
-    
-    } else if ("max_cons_mv_estimate" %in% names(extra_study_details)) { # overlapping
+                                         "Multivariate effect size: ", round(extra_study_details$mv_estimate, 2), 
+                                         " [", round(extra_study_details$mv_ci[1], 2), ", ", round(extra_study_details$mv_ci[2], 2), "]")
+      
+    } else if ("max_cons_mv_estimate" %in% names(extra_study_details) && 
+               !is.null(extra_study_details$max_cons_mv_estimate) && 
+               !is.na(extra_study_details$max_cons_mv_estimate)) { # overlapping
       
       summary_info$bottom_text <- paste0(summary_info$bottom_text,"\n",
-                            "Max conservative multivariate effect size: ", round(extra_study_details$max_cons_mv_estimate, 2))
-      # bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
-      #                       "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%\n",
-      #                       "Max conservative multivariate effect size: ", round(extra_study_details$max_cons_mv_estimate, 2))
-    # } else {
-      # bottom_text <- paste0("Max conservative effect size: ", extra_study_details$max_cons_effect, "\n",
-      #                       "Percent not overlapping zero: ", round(extra_study_details$percent_not_zero * 100, 1), "%")
-    
+                                         "Max conservative multivariate effect size: ", round(extra_study_details$max_cons_mv_estimate, 2))
     }
-    
   }
-
+  
   return(summary_info)
 }
 
@@ -1097,23 +1100,61 @@ get_summary_info <- function(study_details, extra_study_details) {
 # Combine summary info if multiple overlapping plots so there's one description per panel
 
 combine_summary_info <- function(summary_info) {
-
+  
   summary_info2 <- list()
   summary_info2$title_text <- summary_info[[1]]$title_text
   # append num studies
   summary_info2$title_text <- paste0(summary_info2$title_text, " (", length(summary_info), " studies)")
-
-  # for summary_info2$bottom_text, get summary_info[:]$bottom_text strings for each study and parse max cons effect size, perce not overlapping zero, and multivar effect size. Take average
-  max_cons_effect__overlapping <- max(as.numeric(sapply(summary_info, function(x) as.numeric(sub(".*Max conservative effect size: ([^\n]+).*", "\\1", x$bottom_text)))))
-  percent_not_zero__overlapping <- mean(as.numeric(sapply(summary_info, function(x) as.numeric(sub(".*Percent not overlapping zero: ([^%]+).*", "\\1", x$bottom_text)))))
-  mv_estimate__overlapping <- mean(as.numeric(sapply(summary_info, function(x) as.numeric(sub(".*Max conservative multivariate effect size: ([^\n]+).*", "\\1", x$bottom_text)))))
-
+  
+  # NULL-safe parsing of summary info
+  max_cons_effects <- c()
+  percent_not_zeros <- c()
+  mv_estimates <- c()
+  
+  for (x in summary_info) {
+    # Extract max conservative effect size
+    max_cons_match <- regmatches(x$bottom_text, regexpr("Max conservative effect size: ([^\n]+)", x$bottom_text))
+    if (length(max_cons_match) > 0) {
+      max_cons_val <- as.numeric(sub(".*Max conservative effect size: ([^\n]+).*", "\\1", max_cons_match))
+      if (!is.na(max_cons_val)) {
+        max_cons_effects <- c(max_cons_effects, max_cons_val)
+      }
+    }
+    
+    # Extract percent not overlapping zero
+    percent_match <- regmatches(x$bottom_text, regexpr("Percent not overlapping zero: ([^%]+)", x$bottom_text))
+    if (length(percent_match) > 0) {
+      percent_val <- as.numeric(sub(".*Percent not overlapping zero: ([^%]+).*", "\\1", percent_match))
+      if (!is.na(percent_val)) {
+        percent_not_zeros <- c(percent_not_zeros, percent_val)
+      }
+    }
+    
+    # Extract multivariate effect size (either regular or max conservative)
+    mv_match <- regmatches(x$bottom_text, regexpr("(Max conservative )?[Mm]ultivariate effect size: ([^\n]+)", x$bottom_text))
+    if (length(mv_match) > 0) {
+      mv_val <- as.numeric(sub(".*(Max conservative )?[Mm]ultivariate effect size: ([^\n]+).*", "\\2", mv_match))
+      if (!is.na(mv_val)) {
+        mv_estimates <- c(mv_estimates, mv_val)
+      }
+    }
+  }
+  
+  # Calculate summary statistics with fallbacks
+  max_cons_effect__overlapping <- if (length(max_cons_effects) > 0) max(max_cons_effects) else 0
+  percent_not_zero__overlapping <- if (length(percent_not_zeros) > 0) mean(percent_not_zeros) else 0
+  mv_estimate__overlapping <- if (length(mv_estimates) > 0) mean(mv_estimates) else 0
+  
   summary_info2$bottom_text <- paste0("Max conservative effect size: ", round(max_cons_effect__overlapping, 2), "\n",
-                                      "Percent not overlapping zero: ", round(percent_not_zero__overlapping, 1), "%\n",
-                                      "Multivariate effect size: ", round(mv_estimate__overlapping, 2))
-
-  summary_info <- summary_info2
-
+                                      "Percent not overlapping zero: ", round(percent_not_zero__overlapping, 1), "%")
+  
+  # Only add multivariate info if we have valid estimates
+  if (length(mv_estimates) > 0) {
+    summary_info2$bottom_text <- paste0(summary_info2$bottom_text, "\n",
+                                        "Multivariate effect size: ", round(mv_estimate__overlapping, 2))
+  }
+  
+  return(summary_info2)
 }
 
 
