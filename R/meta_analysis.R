@@ -88,7 +88,7 @@ meta_analysis <- function(v, brain_masks, combo_name = NA, grouping_var = "categ
     }))
     
     if (!combo_exists) {
-      warning("combo_name '", current_combo, "' not found in any study data, skipping...")
+      stop("combo_name '", current_combo, "' not found in any study data, skipping...")
       next
     }
     

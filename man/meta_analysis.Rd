@@ -4,14 +4,14 @@
 \alias{meta_analysis}
 \title{Group Studies by Factor}
 \usage{
-meta_analysis(v, brain_masks, combo_name, grouping_var = "category")
+meta_analysis(v, brain_masks, combo_name = NA, grouping_var = "category")
 }
 \arguments{
 \item{v}{A list containing effect size data}
 
 \item{brain_masks}{A list containing the brain masks}
 
-\item{combo_name}{A string specifying the combo to plot - # TODO: note: in app, this is saved directly in v}
+\item{combo_name}{A string specifying the combo to plot (if NA, processes all combos)}
 
 \item{grouping_var}{A string to specify grouping: "orig_stat_type" or "category"}
 }
@@ -23,8 +23,8 @@ This function plots effect sizes (Cohen's d or R-squared) and simulated confiden
 for a given dataset. It allows optional grouping, visualization, and file saving.
 }
 \examples{
-# Example usage
 \dontrun{
-meta_analysis(v,v$brain_masks, "pooling.none.motion.none.mv.none")
+# Example usage
+meta_analysis(v, v$brain_masks, "pooling.none.motion.none.mv.none")
 }
 }
