@@ -60,6 +60,7 @@ if (!any(is.nan(data[[combo_name]][[estimate]]))) { # check if data exists
   sorted_upper_bounds_whole <- data[[combo_name]][[ci_ub]][sorted_indices]
   sorted_lower_bounds_whole <- data[[combo_name]][[ci_lb]][sorted_indices]
 
+  num_tests = length(sorted_upper_bounds_whole)
   # downsample data for plotting
   if (prep_spatial) { # don't downsample
     downsample <- 1
@@ -200,7 +201,8 @@ if (!any(is.nan(data[[combo_name]][[estimate]]))) { # check if data exists
       mv_ci = c(data[[full_mv_combo_name]][[ci_lb]], data[[full_mv_combo_name]][[ci_ub]]),
       grouping_var = plot_info$grouping_var,
       group_level = plot_info$group_level,
-      ref = plot_info$ref
+      ref = plot_info$ref,
+      num_tests_corrected = num_tests
     ),
     study_details = study_details
   )
