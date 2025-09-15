@@ -54,8 +54,8 @@ plot_simci_panel <- function(pp, plot_data_list) {
 
     # extract data from list
     plot_df <- data.frame(
-      x = 1:length(plot_data_list[[i]]$data$estimate),
-      estimate = plot_data_list[[i]]$data$estimate,
+      x = 1:length(plot_data_list[[i]]$data[[pp$estimate_type]]),
+      estimate = plot_data_list[[i]]$data[[pp$estimate_type]],
       ub = plot_data_list[[i]]$data$ub,
       lb = plot_data_list[[i]]$data$lb
     )
@@ -145,7 +145,7 @@ plot_density_panel <- function(pp, plot_data_list, use_effect_size_bin = FALSE) 
   # }
       
   # TODO: temporary hack for R^2 limits
-  # if ((max(plot_data_list[[1]]$data$estimate,na.rm = TRUE) <= 1.1) && (min(plot_data_list[[1]]$data$estimate,na.rm = TRUE) >= -0.1)) {
+  # if ((max(plot_data_list[[1]]$data[[pp$estimate_type]],na.rm = TRUE) <= 1.1) && (min(plot_data_list[[1]]$data[[pp$estimate_type]],na.rm = TRUE) >= -0.1)) {
   #   pp$xlim = pp$rsq_effect_size_limits
   # }
 
@@ -171,7 +171,7 @@ plot_density_panel <- function(pp, plot_data_list, use_effect_size_bin = FALSE) 
 
     if (use_effect_size_bin) { # optional: bin effect sizes
 
-      cons_estimate__binned <- as.numeric(cut(abs(plot_data_list[[i]]$data$cons_estimate), breaks = pp$effect_size_bins, right = FALSE))
+      cons_estimate__binned <- as.numeric(cut(abs(plot_data_list[[i]]$data[[pp$estimate_type]]), breaks = pp$effect_size_bins, right = FALSE))
       
       # manually make counts & normalize
       cons_estimate_counts <- as.data.frame( table(cons_estimate__binned) )
@@ -222,11 +222,11 @@ plot_density_panel <- function(pp, plot_data_list, use_effect_size_bin = FALSE) 
     } else {
       
 
-      if (length(unique(plot_data_list[[i]]$data$cons_estimate)) == 1) {
-        p <- p + geom_histogram(data = data.frame(value = plot_data_list[[i]]$data$cons_estimate, sample_size_category = sample_size_category),
+      if (length(unique(plot_data_list[[i]]$data[[pp$estimate_type]])) == 1) {
+        p <- p + geom_histogram(data = data.frame(value = plot_data_list[[i]]$data[[pp$estimate_type]], sample_size_category = sample_size_category),
                                 aes(x = value, fill = sample_size_category, color = sample_size_category), alpha = pp$alpha, size = pp$size, binwidth = pp$hist_bin_width)
       } else {
-        p <- p + geom_density(data = data.frame(value = plot_data_list[[i]]$data$cons_estimate, sample_size_category = sample_size_category),
+        p <- p + geom_density(data = data.frame(value = plot_data_list[[i]]$data[[pp$estimate_type]], sample_size_category = sample_size_category),
                           aes(x = value, fill = sample_size_category, color = sample_size_category), alpha = pp$alpha, size = pp$size) # for unique color per study, do: fill = i, color = i
       }
     }
@@ -317,7 +317,6 @@ plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
   # make plot object
   # p <- ggplot()
   
-  use_cons_est <- TRUE
 
   if (length(plot_data_list) == 1) { # only allowing 1 since would be weird to plot overlapping for this...
     for (i in seq_along(plot_data_list)) {
@@ -327,14 +326,10 @@ plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
       if (!is.na(threshold_category)) {
         # get binary mask and then apply
         data <- plot_power_panel(pp, list(plot_data_list[[i]]), threshold_category, use_category_bins = FALSE, do_spatial_plot = TRUE)
-        data <- plot_data_list[[i]]$data$estimate * data[[1]]$data$estimate
+        data <- plot_data_list[[i]]$data[[pp$estimate_type]] * data[[1]]$data[[pp$estimate_type]] # originally tested with data[[1]]$...$estimate - TODO: if error, return here
         data[is.na(data)] <- 0 # set all non-masked values to 0
       } else {
-        if (use_cons_est) {
-          data <- plot_data_list[[i]]$data$cons_estimate
-        } else {
-          data <- plot_data_list[[i]]$data$estimate
-        }
+        data <- plot_data_list[[i]]$data[[pp$estimate_type]]
       }
       
       if (length(data) == 10) { # need atlas for network-level - currently Shen only - TODO: un-hard-code and pass the actual atlas
@@ -567,14 +562,10 @@ plot_connectivity_panel <- function(pp, plot_data_list, threshold_category = NA)
     if (!is.na(threshold_category)) {
       # get binary mask and then apply
       data <- plot_power_panel(pp, list(plot_data_list[[i]]), threshold_category, use_category_bins = FALSE, do_spatial_plot = TRUE)
-      data <- plot_data_list[[i]]$data$estimate * data[[1]]$data$estimate
+      data <- plot_data_list[[i]]$data[[pp$estimate_type]] * data[[1]]$data[[pp$estimate_type]]
       data[is.na(data)] <- 0 # set all non-masked values to 0
     } else {
-      if (use_cons_est) {
-        data <- plot_data_list[[i]]$data$cons_estimate
-      } else {
-        data <- plot_data_list[[i]]$data$estimate
-      }
+        data <- plot_data_list[[i]]$data[[pp$estimate_type]]
     }
     mask <- plot_data_list[[i]]$extra_study_details$brain_masks$mask
     # catch mask if doesn't exist
@@ -847,15 +838,15 @@ plot_power_panel <- function(pp, plot_data_list, output_type, use_category_bins 
           this_type <- "one.sample"
       }
       
-      y <- numeric(length(plot_data_list[[i]]$data$cons_estimate))
+      y <- numeric(length(plot_data_list[[i]]$data[[pp$estimate_type]]))
       
-      for (j in seq_along(plot_data_list[[i]]$data$cons_estimate)) {
+      for (j in seq_along(plot_data_list[[i]]$data[[pp$estimate_type]])) {
         if (output_type == "power") {
-          tmp <- pwr.t.test(d = plot_data_list[[i]]$data$cons_estimate[j], sig.level = pp$alpha_sig, n = pp$n_for_pwr, type = this_type)
+          tmp <- pwr.t.test(d = plot_data_list[[i]]$data[[pp$estimate_type]][j], sig.level = pp$alpha_sig, n = pp$n_for_pwr, type = this_type)
           y[j] <- tmp$power
         } else {
-          if (plot_data_list[[i]]$data$cons_estimate[j] != 0) { # can only calculate n for non-zero effects
-            tmp <- pwr.t.test(d = abs(plot_data_list[[i]]$data$cons_estimate[j]), sig.level = pp$alpha_sig, power = pp$reference_power, type = this_type)
+          if (plot_data_list[[i]]$data[[pp$estimate_type]][j] != 0) { # can only calculate n for non-zero effects
+            tmp <- pwr.t.test(d = abs(plot_data_list[[i]]$data[[pp$estimate_type]][j]), sig.level = pp$alpha_sig, power = pp$reference_power, type = this_type)
             y[j] <- tmp$n
           } else {
             y[j] <- pp$y_big
@@ -924,9 +915,9 @@ plot_power_panel <- function(pp, plot_data_list, output_type, use_category_bins 
           
           # threshold
           if (output_type == "power") {
-            plot_data_list[[i]]$data$estimate <- df$y > this_thresh
+            plot_data_list[[i]]$data[[pp$estimate_type]] <- df$y > this_thresh
           } else {
-            plot_data_list[[i]]$data$estimate <- df$y < this_thresh
+            plot_data_list[[i]]$data[[pp$estimate_type]] <- df$y < this_thresh
           }
           
           p <- plot_data_list
@@ -1131,7 +1122,7 @@ add_plot_description <- function(p, pp, summary_info, add_extra_text, do_minimal
   #     list(
   #       max_cons_estimate = x$extra_study_details$max_cons_estimate,
   #       percent_not_zero = x$extra_study_details$percent_not_zero,
-  #       n_variables = length(x$data$cons_estimate),
+  #       n_variables = length(x$data[[pp$estimate_type]]),
   #       cons_mv_estimate = x$extra_study_details$mv_ci[1]
   #     )
   #   })
