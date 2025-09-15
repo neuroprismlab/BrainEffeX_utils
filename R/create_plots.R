@@ -25,6 +25,7 @@ create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd',
   # General plot parameters
   pp <- list()
   pp$effect_size_measure <- effect_type
+  pp$estimate_type <- 'cons_estimate' # using cons_estimate or estimate
   if (effect_type == 'r_sq') {
     pp$effect_size_measure <- 'R^2' # rename to shorten
     pp$effect_size_thresh <- 0.1
