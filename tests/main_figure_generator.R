@@ -33,7 +33,8 @@ load_all(utils_package_local)
 # input and output directories
 
 data_dir <- paste0(base_dir,"/Lab/xMore/Software/scripts/R/myscripts/effect_size/BrainEffeX/data/")
-out_basename_basename <- paste0(base_dir,"/Lab/Tasks-Ongoing/K99/Effect_Size/manuscript/figures/plots/")
+out_basename_basename <- paste0(base_dir,"/Lab/Tasks-Ongoing/-K99/Effect_Size/manuscript/figures/plots/")
+# out_basename_basename <- "/Users/stephanienoble/Library/CloudStorage/GoogleDrive-s.noble@northeastern.edu/My Drive/Lab/xMore/Software/scripts/R/myscripts/effect_size/BrainEffeX/figures/"
 
 # plot params - USER-DEFINED
 
@@ -43,12 +44,13 @@ all_effect_size_types <- c('d')              # c('d', 'r_sq', 'd.full_res')
 
 all_motion <- c('regression')  # c('none', 'regression', 'threshold') # TODO: stat_control -> "...regression...$d", full_residualization -> "...regression...$d.full_res"
 all_pooling <- c('net') #  # c('none','net')
-plot_multi <- c(FALSE) # TRUE, FALSE
+plot_multi <- FALSE # TRUE, FALSE
 
 all_plot_combination_styles <- c('single')   # c('single','meta','overlapping') # note: overlapping can only be used for manuscript
 all_grouping_var <- c('category')          # c('none', 'category', 'orig_stat_type') # used only for meta & overlap plots - TODO: separate out?
-all_manuscript_plot_types <- c('spatial')  # c('simci', 'spatial', 'spatial_pow_thr', 'spatial_pow_n_thr', 'density', 'density_binned', 'power', 'power_n','power_binned','power_n_binned') # only used for plot_output_style = 'manuscript'
+all_manuscript_plot_types <- c('simci')  # c('simci', 'spatial', 'spatial_pow_thr', 'spatial_pow_n_thr', 'density', 'density_binned', 'power', 'power_n','power_binned','power_n_binned') # only used for plot_output_style = 'manuscript'
 
+force_run_meta <- FALSE # TODO: remove when done testing
 make_plots <- TRUE
 save_plots <- TRUE
 # save_logs <- FALSE
@@ -154,10 +156,14 @@ if (plot_combination_style == 'meta') {
   }
 }
 
+if (force_run_meta) {
+  run_meta <- TRUE
+}
+
 if (run_meta) {
   v <- meta_analysis(v, v$brain_masks, combo_name, grouping_var = grouping_var)
   v <- meta_analysis(v, v$brain_masks, mv_combo_basename, grouping_var = grouping_var) # add multivariate
-  save(v, file = meta_fn)
+  # save(v, file = meta_fn)
 }
 
 
@@ -222,24 +228,28 @@ if (make_plots) {
     
   
   } else if (plot_combination_style == 'overlapping') { # overlapping individual plots
-  
+    
+    study_group_name <- v$study[[grouping_var]]
     if (grouping_var == 'category') {
-      study_group_name <- v$study$category
-    } else if (grouping_var == 'orig_stat_type') {
-      study_group_name <- v$study$orig_stat_type
+      secondary_grouping_var <- 'ref'
+    } else {
+      secondary_grouping_var <- 'map_type' # e.g., orig_stat_type
     }
   
     # sort existing groups by specified group order
     all_group_names <- grouping_var_order[[grouping_var]][grouping_var_order[[grouping_var]] %in% unique(study_group_name)]
-    all_map_types <- unique(v$study$map_type)
+    # all_map_types <- unique(v$study$map_type)
+    all_second_group_names <- unique(v$study[[secondary_grouping_var]])
+    
   
     for (this_group_name in all_group_names) {
-      for (this_map_type in all_map_types) {
-        idx <- which(study_group_name == this_group_name & v$study$map_type == this_map_type)
-        plot_info__idx[[paste0(this_group_name, '.', this_map_type)]] <- idx
-        plot_info__grouping_var[[paste0(this_group_name, '.', this_map_type)]] <- grouping_var
-        plot_info__group_level[[paste0(this_group_name, '.', this_map_type)]] <- this_group_name
-        plot_info__ref[[paste0(this_group_name, '.', this_map_type)]] <- unique(v$study$ref[idx])
+      # for (this_map_type in all_map_types) {
+      for (this_second_group_name in all_second_group_names) {
+        idx <- which(study_group_name == this_group_name & v$study[[secondary_grouping_var]] == this_second_group_name)
+        plot_info__idx[[paste0(this_group_name, '.', this_second_group_name)]] <- idx
+        plot_info__grouping_var[[paste0(this_group_name, '.', this_second_group_name)]] <- grouping_var
+        plot_info__group_level[[paste0(this_group_name, '.', this_second_group_name)]] <- this_group_name
+        plot_info__ref[[paste0(this_group_name, '.', this_second_group_name)]] <- unique(v$study[[secondary_grouping_var]][idx])
       }
     }
   }
@@ -408,7 +418,7 @@ if (make_plots) {
     if (plot_output_style == 'manuscript') {
       grouping_var_str <- paste0('_', plot_type)
     } else { 
-      grouping_var_str <- paste0('_', plot_type, '_', effect_size_type)
+      grouping_var_str <- paste0('_', plot_type, '_', effect_size_type) # TODO: remove effect_size_type (already in folder) and plot_type (there is only one plot type) - would need to remove in shiny too
     }
     
     out_basename <- paste0(out_basename_basename, plot_output_style, '/', effect_size_type, '/motion_', motion, '/pooling_', pooling, '/', multi_str, plot_combination_style, grouping_var_str)

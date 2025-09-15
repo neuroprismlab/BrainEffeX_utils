@@ -81,13 +81,13 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
         
         print(paste0("- ", this_meta_label))
         
-        # if (!grepl("cognitive", this_meta_label)) {
+        if (!("cognitive (task)"==level && ref=='voxel')) {
         # if (!grepl("", this_meta_label)) {  # do everything
-        # print(paste0("  (Skipping - only doing ", specific_category, ")"))
+        print(paste0("  (Skipping - only doing subset of categories)"))
         
-        if (this_label %in% names(v[[meta_str]]$data)) {
-          
-          warning(paste0("(Data for ", this_label, " already exists. Skipping...)"))
+        # if (this_label %in% names(v[[meta_str]]$data)) {
+        #   
+        #   warning(paste0("(Data for ", this_label, " already exists. Skipping...)"))
           
         } else {
         
@@ -451,7 +451,17 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
 
         # store the study info in the study_stat dataframe
 
-        v[[meta_str]]$study <- rbind(v[[meta_str]]$study, data.frame(group_level = level, ref = ref, name = this_meta_label))
+        # if this_meta_label doesn't exist in study, append
+        if (!(this_meta_label %in% v[[meta_str]]$study$name)) {
+          v[[meta_str]]$study <- rbind(v[[meta_str]]$study, data.frame(group = level, ref = ref, name = this_meta_label))
+        } else {
+          # otherwise, check that it is the same position in study$name as it is in v[[meta_str]]$data
+          idx_data <- which(names(v[[meta_str]]$data) == this_meta_label)
+          idx_study <- which(v[[meta_str]]$study$name == this_meta_label)
+          if (length(idx_data) != length(idx_study)) {
+            stop(paste0("Error: mismatch in data and study names for ", this_meta_label, ". Data has ", length(idx_data), " entries but study has ", length(idx_study), " entries."))
+          }
+        }
 
         # store intersection masks
 
@@ -459,7 +469,7 @@ meta_analysis <- function(v, brain_masks, combo_name, grouping_var = "category")
         v[[meta_str]]$brain_masks[[this_meta_label]][[combo_name]]$mask <- intersection_mask
         v[[meta_str]]$brain_masks[[this_meta_label]][[combo_name]]$mask_type <- "intersection"
 
-        } 
+        }
       }
     }
   }

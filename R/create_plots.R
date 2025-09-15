@@ -30,7 +30,7 @@ create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd',
     pp$effect_size_thresh <- 0.1
     pp$effect_size_limits_big <- c(-0.25, 0.5)
     pp$effect_size_limits_small <- c(-0.02, 0.1)
-    pp$effect_size_limits_smaller <- c(-0.01, 0.05)
+    pp$effect_size_limits_smaller <- c(-0.005, 0.005)
     pp$reference_xlimits <- c(0, 0.005)
   } else { # using d limits for all other effect types
     pp$effect_size_thresh <- 0.5

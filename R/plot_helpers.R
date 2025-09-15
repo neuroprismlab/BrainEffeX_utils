@@ -316,6 +316,8 @@ plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
 
   # make plot object
   # p <- ggplot()
+  
+  use_cons_est <- TRUE
 
   if (length(plot_data_list) == 1) { # only allowing 1 since would be weird to plot overlapping for this...
     for (i in seq_along(plot_data_list)) {
@@ -328,7 +330,11 @@ plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
         data <- plot_data_list[[i]]$data$estimate * data[[1]]$data$estimate
         data[is.na(data)] <- 0 # set all non-masked values to 0
       } else {
-        data <- plot_data_list[[i]]$data$estimate
+        if (use_cons_est) {
+          data <- plot_data_list[[i]]$data$cons_estimate
+        } else {
+          data <- plot_data_list[[i]]$data$estimate
+        }
       }
       
       if (length(data) == 10) { # need atlas for network-level - currently Shen only - TODO: un-hard-code and pass the actual atlas
@@ -557,13 +563,18 @@ plot_connectivity_panel <- function(pp, plot_data_list, threshold_category = NA)
 
     #       template <- plot_data_list[[i]]$study_details$ref
 
+    use_cons_est <- TRUE
     if (!is.na(threshold_category)) {
       # get binary mask and then apply
       data <- plot_power_panel(pp, list(plot_data_list[[i]]), threshold_category, use_category_bins = FALSE, do_spatial_plot = TRUE)
       data <- plot_data_list[[i]]$data$estimate * data[[1]]$data$estimate
       data[is.na(data)] <- 0 # set all non-masked values to 0
     } else {
-      data <- plot_data_list[[i]]$data$estimate
+      if (use_cons_est) {
+        data <- plot_data_list[[i]]$data$cons_estimate
+      } else {
+        data <- plot_data_list[[i]]$data$estimate
+      }
     }
     mask <- plot_data_list[[i]]$extra_study_details$brain_masks$mask
     # catch mask if doesn't exist
@@ -832,7 +843,7 @@ plot_power_panel <- function(pp, plot_data_list, output_type, use_category_bins 
       # infer whether one sample or two sample
       # if t and test component 2 is empty, it's one sample
       this_type <- "two.sample"
-      if ( plot_data_list[[i]]$study_details$orig_stat_type == 't' && is.null(plot_data_list[[i]]$study_details$test_component_2) ) {
+      if ( plot_data_list[[i]]$study_details$orig_stat_type == 't' ) {
           this_type <- "one.sample"
       }
       
