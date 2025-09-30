@@ -3,5 +3,6 @@ bibentry(
   title    = "BrainEffeX_utils",
   author   = c(person("Hallee", "Shearer"), person("Stephanie", "Noble")),
   year     = "2025",
-  url      = "https://github.com/neuroprismlab/BrainEffeX_utils"
+  url      = "https://github.com/neuroprismlab/BrainEffeX_utils",
+  doi      = "10.5281/zenodo.17238783"
 )
