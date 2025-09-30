@@ -1,6 +1,6 @@
 #' Group Studies by Factor
 #'
-#' This function plots effect sizes (Cohen's d or R-squared) and simulated confidence intervals (CIs)
+#' This function computes effect sizes (Cohen's d or R-squared) and simulated confidence intervals (CIs)
 #' for a given dataset. It allows optional grouping, visualization, and file saving.
 #' @import metafor
 #' @importFrom metafor rma.mv

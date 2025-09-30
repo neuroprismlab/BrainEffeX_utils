@@ -7,3 +7,5 @@
 inst/meta
 .DS_Store
 old
+
+/.quarto/

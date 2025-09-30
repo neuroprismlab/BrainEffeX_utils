@@ -1,0 +1,7 @@
+bibentry(
+  bibtype  = "Misc",
+  title    = "BrainEffeX_utils",
+  author   = c(person("Hallee", "Shearer"), person("Stephanie", "Noble")),
+  year     = "2025",
+  url      = "https://github.com/neuroprismlab/BrainEffeX_utils"
+)
