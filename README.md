@@ -59,6 +59,7 @@ install.packages(c(
 ```
 
 ## Citation
+[![DOI](https://zenodo.org/badge/904945550.svg)](https://doi.org/10.5281/zenodo.17238783)
 
 If you use BrainEffeX_utils in your research, please cite:
 
