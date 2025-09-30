@@ -63,11 +63,12 @@ install.packages(c(
 If you use BrainEffeX_utils in your research, please cite:
 
 ```
-@software{braineffex_utils,
+@misc{braineffex_utils,
   title = {BrainEffeX_utils},
   author = {Shearer, Hallee and Noble, Stephanie},
   year = {2025},
-  url = {https://github.com/neuroprismlab/BrainEffeX_utils}
+  url = {https://github.com/neuroprismlab/BrainEffeX_utils},
+  doi = {10.5281/zenodo.17238783}
 }
 ```
 
