@@ -76,7 +76,7 @@ plot_simci_panel <- function(pp, plot_data_list) {
 
   # make plot object
 
-  p <- ggplot() + geom_hline(yintercept = 0, color = pp$intercept_line_color, linetype = "dashed", size = pp$intercept_line_size)
+  p <- ggplot() + geom_hline(yintercept = 0, color = pp$intercept_line_color, linetype = "dashed", linewidth = pp$intercept_line_size)
 
   for (i in seq_along(plot_data_list)) {
 
@@ -228,8 +228,8 @@ plot_density_panel <- function(pp, plot_data_list, use_effect_size_bin = FALSE) 
                     aes(x = x, y = y, fill = sample_size_category, color = sample_size_category), 
                     alpha = pp$alpha * 0.5) +
           geom_line(data = data.frame(x = cons_estimate_counts$category, y = cons_estimate_counts$count, sample_size_category = sample_size_category),
-                    aes(x = x, y = y, fill = sample_size_category, color = sample_size_category), 
-                    size = pp$size, alpha = pp$alpha)
+                    aes(x = x, y = y, color = sample_size_category), 
+                    linewidth = pp$size, alpha = pp$alpha)
       }
       
       # older options
@@ -255,10 +255,10 @@ plot_density_panel <- function(pp, plot_data_list, use_effect_size_bin = FALSE) 
 
       if (length(unique(plot_data_list[[i]]$data$cons_estimate)) == 1) {
         p <- p + geom_histogram(data = data.frame(value = plot_data_list[[i]]$data$cons_estimate, sample_size_category = sample_size_category),
-                                aes(x = value, fill = sample_size_category, color = sample_size_category), alpha = pp$alpha, size = pp$size, binwidth = pp$hist_bin_width)
+                                aes(x = value, fill = sample_size_category, color = sample_size_category), alpha = pp$alpha, linewidth = pp$size, binwidth = pp$hist_bin_width)
       } else {
         p <- p + geom_density(data = data.frame(value = plot_data_list[[i]]$data$cons_estimate, sample_size_category = sample_size_category),
-                          aes(x = value, fill = sample_size_category, color = sample_size_category), alpha = pp$alpha, size = pp$size) # for unique color per study, do: fill = i, color = i
+                          aes(x = value, fill = sample_size_category, color = sample_size_category), alpha = pp$alpha, linewidth = pp$size) # for unique color per study, do: fill = i, color = i
       }
     }
     
@@ -927,8 +927,8 @@ plot_power_panel <- function(pp, plot_data_list, output_type, use_category_bins 
                       aes(x = x, y = y, fill = sample_size_category, color = sample_size_category), 
                       alpha = pp$alpha * 0.5) +
             geom_line(data = df,
-                        aes(x = x, y = y, fill = sample_size_category, color = sample_size_category), 
-                        size = pp$size, alpha = pp$alpha)
+                        aes(x = x, y = y, color = sample_size_category), 
+                        linewidth = pp$size, alpha = pp$alpha)
         }
       
       
