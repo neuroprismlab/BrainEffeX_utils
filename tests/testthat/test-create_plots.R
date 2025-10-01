@@ -484,9 +484,12 @@ test_that("create_plots handles plot parameters correctly", {
   
   # Test that result has expected ggplot structure
   expect_true("ggplot" %in% class(result))
-  expect_true(is.list(result))
-  expect_true("data" %in% names(result))
-  expect_true("layers" %in% names(result))
+
+  if (inherits(result, "ggplot")) {
+    expect_true(is.list(result))
+    expect_true("data" %in% names(result))
+    expect_true("layers" %in% names(result))
+  }
 })
 
 test_that("create_plots validates input data structure", {
