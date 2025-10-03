@@ -1169,6 +1169,7 @@ combine_summary_info <- function(summary_info) {
 #' @param summary_info A list of summary info for the plot.
 #' @param add_extra_text Whether to add extra text below plot with more info.
 #' @param do_minimal_title Whether to use minimal title option.
+#' @param title_size Title font size (default is 21).
 #'
 #' @return A ggplot object with summary labels.
 #' @export
@@ -1178,10 +1179,10 @@ combine_summary_info <- function(summary_info) {
 #' \dontrun{
 #' add_plot_description(p, pp, study_details, extra_study_details)
 #' }
-add_plot_description <- function(p, pp, summary_info, add_extra_text, do_minimal_title) {
+add_plot_description <- function(p, pp, summary_info, add_extra_text, do_minimal_title, title_size = 21) {
 
   # add description-specific plot params
-  pp$title_size <- 21
+  pp$title_size <- title_size
   pp$caption_size <- 15
   pp$title_hjust <- 0.5
   pp$title_lmargin <- -6 # adjust it a bit left of the plot y-axis

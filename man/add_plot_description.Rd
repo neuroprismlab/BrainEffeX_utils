@@ -4,7 +4,14 @@
 \alias{add_plot_description}
 \title{Add summary labels}
 \usage{
-add_plot_description(p, pp, summary_info, add_extra_text, do_minimal_title)
+add_plot_description(
+  p,
+  pp,
+  summary_info,
+  add_extra_text,
+  do_minimal_title,
+  title_size = 21
+)
 }
 \arguments{
 \item{p}{A ggplot object to which the labels will be added.}
@@ -16,6 +23,8 @@ add_plot_description(p, pp, summary_info, add_extra_text, do_minimal_title)
 \item{add_extra_text}{Whether to add extra text below plot with more info.}
 
 \item{do_minimal_title}{Whether to use minimal title option.}
+
+\item{title_size}{Title font size (default is 21).}
 }
 \value{
 A ggplot object with summary labels.

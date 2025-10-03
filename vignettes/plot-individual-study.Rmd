@@ -1,0 +1,84 @@
+---
+title: "plot-individual-study"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{plot-individual-study}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(BrainEffeX.utils)
+library(ggpubr)
+library(devtools) 
+```
+
+### (optional) Download the data:
+
+We have included two studies to plot as examples, but cannot include more in this vignette due to limits on the size of files that we can store on GitHub. 
+
+If you want to use the whole braineffex dataset for plotting, you can download it from OSF by running the following commented code:
+
+```{r}
+# library(osfr)
+# data_path = "./"
+# data <- osf_retrieve_file("g84tk") %>%
+#   osf_download(path = data_path)
+```
+
+### Load the data:
+
+```{r}
+data(test_data, package = "BrainEffeX.utils")
+
+# if you downloaded the data from OSF, load it like this:
+# data_path = path_to_your_downloaded_data
+# load(data_path)
+```
+
+### Studies available to plot:
+
+Run the following code to see the names of the studies available to plot.
+
+The names are in the format: `[dataset]_[map_type]_[test_type]_[test_component_1]_[test_component_2]`
+
+Where:
+
+-   `[map_type]` is either "fc" for functional connectivity or "act" for task-based activation,
+
+-   `[test_type]` is either "t" for one-sample t-test, "t2" for two-sample t-test, or "r" for correlation,
+
+-   `[test_component_1]` and `[test_component_2]` are the components of the test (when applicable)
+
+*For example, abcd_fc_r_rest_bmi is a correlation between functional connectivity during rest and BMI in the ABCD dataset*
+
+```{r echo = TRUE}
+v$study$name
+```
+
+### Plot a single study
+
+Specify the details of the study that you would like to plot:
+
+```{r echo = TRUE}
+# specify the name of the study
+study_name = "abcd_fc_r_rest_bmi"
+
+#specify the estimate to plot, either "d" for Cohen's d, or "r_sq" for R-squared
+estimate = "d"
+
+# specify the motion correction method to plot, either "none", "threshold" (for 0.1mm threshold), "threshold2" (for 0.2mm threshold), or "regression"
+motion = "regression"
+
+# specify the pooling method to plot, either "none" (no pooling), or "net" (network-based pooling)
+pooling = "net"
+
+plot_one_simci(study_name, v, estimate, motion, pooling)
+```
