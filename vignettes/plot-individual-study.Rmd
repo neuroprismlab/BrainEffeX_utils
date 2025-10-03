@@ -18,6 +18,7 @@ knitr::opts_chunk$set(
 library(BrainEffeX.utils)
 library(ggpubr)
 library(devtools) 
+knitr::opts_chunk$set(fig.width = 7, fig.height = 5)
 ```
 
 ### (optional) Download the data:
@@ -63,7 +64,7 @@ Where:
 v$study$name
 ```
 
-### Plot a single study
+### Specify a single study
 
 Specify the details of the study that you would like to plot:
 
@@ -79,6 +80,15 @@ motion = "regression"
 
 # specify the pooling method to plot, either "none" (no pooling), or "net" (network-based pooling)
 pooling = "net"
+```
 
+### Plot that study's effect sizes with simultaneous confidence intervals
+```{r echo = TRUE}
 plot_one_simci(study_name, v, estimate, motion, pooling)
+```
+
+### Plot that study's effect sizes with a spatial plot
+Note that this function can plot matrices for FC studies or brain maps for activation studies, but activation studies were not included in the test data used for this vignette due to size limits on GitHub.
+```{r echo = TRUE}
+plot_one_spatial(study_name, v, estimate, motion, pooling)
 ```
