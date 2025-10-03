@@ -17,11 +17,13 @@ plot_one_spatial(
 \arguments{
 \item{study_name}{The name of the study to plot (string).}
 
-\item{v_data}{A data list containing effect size data (download data from OSF: https://doi.org/10.17605/OSF.IO/CWNJD, or format your data to the same format)}
+\item{v_data}{A data list containing effect size data
+(download data from OSF: https://doi.org/10.17605/OSF.IO/CWNJD, or format your data to the same format)}
 
 \item{estimate}{The effect size measure to use ('d' or 'r_sq'). Default is 'd'.}
 
-\item{motion_method}{The motion correction method used ('none', 'regression', 'threshold' for 0.1mm threshold, or 'threshold2' for 0.2mm threshold). Default is 'none'.}
+\item{motion_method}{The motion correction method used ('none', 'regression', 'threshold' for 0.1mm threshold,
+or 'threshold2' for 0.2mm threshold). Default is 'none'.}
 
 \item{pooling_method}{The pooling method used ('none', or 'net' for network-based pooling). Default is 'none'.}
 
@@ -38,7 +40,8 @@ This function plots a single spatial effect size plot.
 \examples{
 # Example usage
 \dontrun{
-plot_one_spatial("abcd_fc_r_rest_bmi", v_data = v) # v downloaded from OSF: https://doi.org/10.17605/OSF.IO/CWNJD
+plot_one_spatial("abcd_fc_r_rest_bmi", v_data = v) 
+# v downloaded from OSF: https://doi.org/10.17605/OSF.IO/CWNJD
 }
 
 }

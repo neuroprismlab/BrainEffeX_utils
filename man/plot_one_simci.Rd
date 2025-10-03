@@ -38,7 +38,8 @@ This function plots a single effect size plot with simultaneous confidence inter
 \examples{
 # Example usage
 \dontrun{
-plot_one_simci("abcd_fc_r_rest_bmi", v_data = v) # v downloaded from OSF: https://doi.org/10.17605/OSF.IO/CWNJD
+plot_one_simci("abcd_fc_r_rest_bmi", v_data = v) 
+# v downloaded from OSF: https://doi.org/10.17605/OSF.IO/CWNJD
 }
 
 }

@@ -19,7 +19,8 @@
 #' @examples
 #' # Example usage
 #' \dontrun{
-#' plot_one_simci("abcd_fc_r_rest_bmi", v_data = v) # v downloaded from OSF: https://doi.org/10.17605/OSF.IO/CWNJD
+#' plot_one_simci("abcd_fc_r_rest_bmi", v_data = v) 
+#' # v downloaded from OSF: https://doi.org/10.17605/OSF.IO/CWNJD
 #' }
 #' 
 #' @import ggplot2
@@ -75,9 +76,11 @@ plot_one_simci <- function(study_name, v_data, estimate = 'd', motion_method = '
 #' This function plots a single spatial effect size plot.
 #'
 #' @param study_name The name of the study to plot (string).
-#' @param v_data A data list containing effect size data (download data from OSF: https://doi.org/10.17605/OSF.IO/CWNJD, or format your data to the same format)
+#' @param v_data A data list containing effect size data 
+#' (download data from OSF: https://doi.org/10.17605/OSF.IO/CWNJD, or format your data to the same format)
 #' @param estimate The effect size measure to use ('d' or 'r_sq'). Default is 'd'.
-#' @param motion_method The motion correction method used ('none', 'regression', 'threshold' for 0.1mm threshold, or 'threshold2' for 0.2mm threshold). Default is 'none'.
+#' @param motion_method The motion correction method used ('none', 'regression', 'threshold' for 0.1mm threshold, 
+#' or 'threshold2' for 0.2mm threshold). Default is 'none'.
 #' @param pooling_method The pooling method used ('none', or 'net' for network-based pooling). Default is 'none'.
 #' @param add_description Logical indicating whether to add a description to the plot. Default is TRUE.
 #' @param do_minimal_title Logical indicating whether to use a minimal title. Default is FALSE.
@@ -88,7 +91,8 @@ plot_one_simci <- function(study_name, v_data, estimate = 'd', motion_method = '
 #' @examples
 #' # Example usage
 #' \dontrun{
-#' plot_one_spatial("abcd_fc_r_rest_bmi", v_data = v) # v downloaded from OSF: https://doi.org/10.17605/OSF.IO/CWNJD
+#' plot_one_spatial("abcd_fc_r_rest_bmi", v_data = v) 
+#' # v downloaded from OSF: https://doi.org/10.17605/OSF.IO/CWNJD
 #' }
 #' 
 #' @import ggplot2
