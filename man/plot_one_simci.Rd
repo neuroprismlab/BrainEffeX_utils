@@ -35,3 +35,11 @@ A ggplot object representing the effect size plot with simultaneous confidence i
 \description{
 This function plots a single effect size plot with simultaneous confidence intervals for a specified study.
 }
+\examples{
+# Example usage
+# \dontrun{
+# plot_one_simci("abcd_fc_r_rest_bmi", v_data = v) 
+# v downloaded from OSF: https://doi.org/10.17605/OSF.IO/CWNJD
+# }
+
+}
