@@ -18,8 +18,8 @@
 #'
 #' @examples
 #' # Example usage
-#' \dontrun{
-#' plot_one_simci("abcd_fc_r_rest_bmi", v_data = v) 
+#' # \dontrun{
+#' # plot_one_simci("abcd_fc_r_rest_bmi", v_data = v) 
 #' # v downloaded from OSF: https://doi.org/10.17605/OSF.IO/CWNJD
 #' }
 #' 
