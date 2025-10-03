@@ -26,7 +26,9 @@ The package handles both task-based activation (voxel-wise) and connectivity (ed
 
 ## Example Usage
 
-To see an example of how the package is used to generate figures for the BrainEffeX application, check out [this](github.com/neuroprismlab/calculate_effex/effect_size/effect_size_example.ipynb) notebook.
+We included a vignette that shows how to use BrainEffeX utils for plotting a single study's effect sizes. To access the vignette, make sure you install the package with `install_github("neuroprismlab/braineffex_utils", build_vignettes = TRUE)`. Load the package with `library(BrainEffeX.utils)`, then run `browseVignettes("BrainEffeX.utils")`. This should take you to a page with any available vignettes which you can view as an html file or as code. 
+
+To see an example of how the package was used to generate figures for the BrainEffeX application, check out [this notebook](github.com/neuroprismlab/calculate_effex/effect_size/effect_size_example.ipynb).
 
 ## Installation
 
@@ -39,7 +41,7 @@ if (!require(devtools)) {
 }
 
 # Install BrainEffeX_utils
-devtools::install_github("neuroprismlab/BrainEffeX_utils")
+devtools::install_github("neuroprismlab/BrainEffeX_utils", build_vignettes = TRUE)
 
 # Load the package
 library(BrainEffeX.utils)
