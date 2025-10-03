@@ -37,7 +37,7 @@ If you want to use the whole braineffex dataset for plotting, you can download i
 ### Load the data:
 
 ```{r}
-data(test_data, package = "BrainEffeX.utils")
+data(v, package = "BrainEffeX.utils")
 
 # if you downloaded the data from OSF, load it like this:
 # data_path = path_to_your_downloaded_data
