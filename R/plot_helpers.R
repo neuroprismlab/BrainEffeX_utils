@@ -116,7 +116,7 @@ plot_density_panel <- function(pp, plot_data_list, use_effect_size_bin = FALSE) 
   # add density-specific plot params
 
   # pp$xlim <- c(-0.15, 0.15)
-  pp$alpha <- 0.1
+  pp$alpha <- 0.9 #0.1
   pp$size <- 0.4
   pp$hist_bin_width <- 0.001 # when there are all 0's, we want a very thin hist instead of density
   pp$xlabel <- "Effect Size"
@@ -135,7 +135,7 @@ plot_density_panel <- function(pp, plot_data_list, use_effect_size_bin = FALSE) 
     # pp$xlim = pp$effect_size_limits_smaller # small for overlapping
   # } else if (length(plot_data_list) == 1) {
   #   if (plot_data_list[[1]]$extra_study_details$n_title == "NA") {
-      pp$xlim = pp$effect_size_limits_smaller # very small for meta
+      pp$xlim = pp$effect_size_limits_small # very small for meta
   #   } else {
       # pp$xlim = pp$effect_size_limits_big # big for individual studies
   #   }
@@ -1107,7 +1107,7 @@ combine_summary_info <- function(summary_info) {
 add_plot_description <- function(p, pp, summary_info, add_extra_text, do_minimal_title) {
 
   # add description-specific plot params
-  pp$title_size <- 21
+  pp$title_size <- 30 #21
   pp$caption_size <- 15
   pp$title_hjust <- 0.5
   pp$title_lmargin <- -6 # adjust it a bit left of the plot y-axis

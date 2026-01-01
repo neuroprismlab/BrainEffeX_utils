@@ -25,7 +25,7 @@ create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd',
   # General plot parameters
   pp <- list()
   pp$effect_size_measure <- effect_type
-  pp$estimate_type <- 'cons_estimate' # using cons_estimate or estimate
+  pp$estimate_type <- 'estimate' # using cons_estimate or estimate
   if (effect_type == 'r_sq') {
     pp$effect_size_measure <- 'R^2' # rename to shorten
     pp$effect_size_thresh <- 0.1
@@ -46,7 +46,7 @@ create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd',
     pp$effect_size_limits_small <- pp$effect_size_limits_small * pp$mv_multiplier
     pp$effect_size_limits_smaller <- pp$effect_size_limits_smaller * pp$mv_multiplier
   }
-  pp$colors__sample_size <- data.frame(labels = c("<1,000", "1,000-5,000", "5,000-10,000", ">10,000", "NA"), colors = c("#82A651", "#3AB7BE", "#E7786C", "#B873F7","#B59410"), breaks_upper_lim = c(1000, 5000, 10000, 999999999, Inf))
+  pp$colors__sample_size <- data.frame(labels = c("<1,000", "1,000-5,000", "5,000-10,000", ">10,000", "NA"), colors = c("#cae6e8", "#84cec1", "#52b5b9", "#4c988d","#0f565c"), breaks_upper_lim = c(1000, 5000, 10000, 999999999, Inf))
   
   # for binning results - TESTING
   pp$effect_size_bins <- c(0, 0.05, 0.2, 0.5, 0.8, 1.5, 2.5, Inf)
@@ -56,8 +56,8 @@ create_plots <- function(plot_data_list, plot_type = 'simci', effect_type = 'd',
   pp$sample_size_bins <- c(0, 25, 50, 100, 500, 1000, 5000, Inf)
   pp$sample_size_bin_labels <- c('Lab','Lab+','Center','Consortium','Consortium+','Large Consortium','Massive Consortium')
   
-  pp$axis_title_size = element_text(size = 16) 
-  pp$axis_text_size = element_text(size = 16)
+  pp$axis_title_size = element_text(size = 25) #16
+  pp$axis_text_size = element_text(size = 20) #16
 
   # General setup
 
