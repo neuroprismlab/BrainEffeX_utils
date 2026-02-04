@@ -372,6 +372,8 @@ plot_activation_panel <- function(pp, plot_data_list, threshold_category = NA) {
         atlas  <- readNIfTI(systemfile("extdata/parcellations/atlas-Schaefer2018_space-MNI152NLin6_res-2_desc-200Parcels17NetworksOrder_dseg.nii.gz", package = "BrainEffeX.utils"))
         for (j in 1:7) {
           atlas$.Data[atlas@.Data == j] <- data[j]
+          }
+        nii <- atlas
       } else {
         mask <- plot_data_list[[i]]$extra_study_details$brain_masks$mask
         nii <- create_nifti(template, data, mask)
