@@ -590,7 +590,7 @@ plot_connectivity_panel <- function(pp, plot_data_list, threshold_category = NA)
     } else if (plot_data_list[[i]]$extra_study_details$ref[[1]] == "ukb_55") {
       mapping_path <- system.file("extdata/parcellations/map55_ukb.csv", package = "BrainEffeX.utils")
     } else if (plot_data_list[[i]]$extra_study_details$ref[[1]] == "schaefer_200") {
-    mapping_path <- system.file("extdata/parcellations/map200_subnetwork.csv", package = "BrainEffeX.utils")
+      mapping_path <- system.file("extdata/parcellations/map200_subnetwork.csv", package = "BrainEffeX.utils")
     } else {
       mapping_path <- NA
     }
