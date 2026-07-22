@@ -36,13 +36,22 @@ prep_data_for_plot <- function(data, study_details, combo_name, mv_combo_name, e
     ci_ub <- "r_sq_sim_ci_ub"
   }
 
+  # convert NaN to NA up front so they're handled by the existing
+  # na_idx filtering below, instead of getting rid of the whole study
+  data[[combo_name]][[estimate]][is.nan(data[[combo_name]][[estimate]])] <- NA
+  data[[combo_name]][[ci_lb]][is.nan(data[[combo_name]][[ci_lb]])] <- NA
+  data[[combo_name]][[ci_ub]][is.nan(data[[combo_name]][[ci_ub]])] <- NA
 
-if (!any(is.nan(data[[combo_name]][[estimate]]))) { # check if data exists
+if (!all(is.na(data[[combo_name]][[estimate]]))) { # check if ANY valid data exists (fixed: was is.nan, and was `any` inverted logic)
 
   na_idx <- is.na(data[[combo_name]][[estimate]]) | is.na(data[[combo_name]][[ci_lb]]) | is.na(data[[combo_name]][[ci_ub]])
-  data[[combo_name]][[estimate]] <- data[[combo_name]][[estimate]][!na_idx]
-  data[[combo_name]][[ci_lb]] <- data[[combo_name]][[ci_lb]][!na_idx]
-  data[[combo_name]][[ci_ub]] <- data[[combo_name]][[ci_ub]][!na_idx]
+  
+  if (!prep_spatial) {
+    # only safe to drop entries when positions don't matter (line/CI plots)
+    data[[combo_name]][[estimate]] <- data[[combo_name]][[estimate]][!na_idx]
+    data[[combo_name]][[ci_lb]] <- data[[combo_name]][[ci_lb]][!na_idx]
+    data[[combo_name]][[ci_ub]] <- data[[combo_name]][[ci_ub]][!na_idx]
+  }
 
   # unlist sim CIs if list
   if (is.list(data[[combo_name]][[ci_lb]])) {
@@ -74,17 +83,19 @@ if (!any(is.nan(data[[combo_name]][[estimate]]))) { # check if data exists
 
   sorted_estimate <- sorted_estimate_whole[seq(1, length(sorted_estimate_whole), by = downsample)]
   # to include the last element of the sorted data, check if the last element of sorted_estimate is the same as the last element of sorted_estimate_whole
-  if (sorted_estimate[length(sorted_estimate)] != sorted_estimate_whole[length(sorted_estimate_whole)]) {
+  # (skip this check when downsample == 1, since every element is already retained --
+  # and NA-containing spatial data would otherwise trigger "missing value where TRUE/FALSE needed")
+  if (downsample > 1 && sorted_estimate[length(sorted_estimate)] != sorted_estimate_whole[length(sorted_estimate_whole)]) {
     sorted_estimate <- c(sorted_estimate, sorted_estimate_whole[length(sorted_estimate_whole)])
   }
   sorted_upper_bounds <- sorted_upper_bounds_whole[seq(1, length(sorted_upper_bounds_whole), by = downsample)]
   # check if the last element of sorted_upper_bounds is the same as the last element of sorted_upper_bounds_whole
-  if (sorted_upper_bounds[length(sorted_upper_bounds)] != sorted_upper_bounds_whole[length(sorted_upper_bounds_whole)]) {
+  if (downsample > 1 && sorted_upper_bounds[length(sorted_upper_bounds)] != sorted_upper_bounds_whole[length(sorted_upper_bounds_whole)]) {
     sorted_upper_bounds <- c(sorted_upper_bounds, sorted_upper_bounds_whole[length(sorted_upper_bounds_whole)])
   }
   sorted_lower_bounds <- sorted_lower_bounds_whole[seq(1, length(sorted_lower_bounds_whole), by = downsample)]
   # check if the last element of sorted_lower_bounds is the same as the last element of sorted_lower_bounds_whole
-  if (sorted_lower_bounds[length(sorted_lower_bounds)] != sorted_lower_bounds_whole[length(sorted_lower_bounds_whole)]) {
+  if (downsample > 1 && sorted_lower_bounds[length(sorted_lower_bounds)] != sorted_lower_bounds_whole[length(sorted_lower_bounds_whole)]) {
     sorted_lower_bounds <- c(sorted_lower_bounds, sorted_lower_bounds_whole[length(sorted_lower_bounds_whole)])
   }
 
@@ -130,16 +141,12 @@ if (!any(is.nan(data[[combo_name]][[estimate]]))) { # check if data exists
     above_cross_idx = length(above_zero)
   }
 
-  # TEMP: quick plot sorted estimate with sorted upper bounds and sorted lower bounds as confidence interval
-  # plot(1:length(sorted_estimate), sorted_estimate, type = "n", xlab = "Effect Size", ylab = "Confidence Interval", main = "Effect Size with Confidence Interval")
-  # lines(1:length(sorted_estimate), sorted_upper_bounds, col = "red")
-  # lines(1:length(sorted_estimate), sorted_lower_bounds, col = "blue")
-  # lines(1:length(sorted_estimate), rep(0, length(sorted_estimate)), col = "black")
-
   # calculate the percent of edges/voxels with confidence intervals that don't overlap with zero:
+  # (na.rm = TRUE added: spatial data can now contain NAs left in place, which would
+  # otherwise silently turn percent_not_zero into NA)
 
-  percent_below_zero <- sum(sorted_upper_bounds < 0) / length(sorted_upper_bounds)
-  percent_above_zero <- sum(sorted_lower_bounds > 0) / length(sorted_lower_bounds)
+  percent_below_zero <- sum(sorted_upper_bounds < 0, na.rm = TRUE) / length(sorted_upper_bounds)
+  percent_above_zero <- sum(sorted_lower_bounds > 0, na.rm = TRUE) / length(sorted_lower_bounds)
   percent_not_zero = percent_below_zero + percent_above_zero
 
 
