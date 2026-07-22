@@ -581,7 +581,7 @@ plot_connectivity_panel <- function(pp, plot_data_list, threshold_category = NA)
   p <- ggplot()
 
   for (i in seq_along(plot_data_list)) { # TODO: would be weird to plot overlapping for this...
-
+    print(plot_data_list[[i]]$extra_study_details$ref[[1]])
     if (plot_data_list[[i]]$extra_study_details$ref[[1]] == "shen_268"){
       # if (plot_data_list[[i]]$study_details$ref == "net") { # TODO: get this input and finish this for pooling=net
       #   mapping_path <- "extdata/parcellations/map268_subnetwork.csv"
@@ -593,6 +593,8 @@ plot_connectivity_panel <- function(pp, plot_data_list, threshold_category = NA)
       mapping_path <- system.file("extdata/parcellations/map55_ukb.csv", package = "BrainEffeX.utils")
     } else if (plot_data_list[[i]]$extra_study_details$ref[[1]] == "schaefer_200") {
       mapping_path <- system.file("extdata/parcellations/map200_subnetwork.csv", package = "BrainEffeX.utils")
+    } else if (plot_data_list[[i]]$extra_study_details$ref[[1]] == "schaefer_1000") {
+      mapping_path <- system.file("extdata/parcellations/map1000_subnetwork.csv", package = "BrainEffeX.utils")
     } else {
       mapping_path <- NA
     }
